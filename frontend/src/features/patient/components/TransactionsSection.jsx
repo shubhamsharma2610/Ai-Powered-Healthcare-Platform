@@ -1,3 +1,4 @@
+import React from "react"
 import StatusBadge from "./shared/StatusBadge";
 import { transactions } from "./shared/data";
 

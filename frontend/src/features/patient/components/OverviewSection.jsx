@@ -1,3 +1,4 @@
+import React from "react"
 import { Icon, icons } from "./shared/Icon";
 import StatusBadge from "./shared/StatusBadge";
 import { overviewCards, appointments } from "./shared/data";

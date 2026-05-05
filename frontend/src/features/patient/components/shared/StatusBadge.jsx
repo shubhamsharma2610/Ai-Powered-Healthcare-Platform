@@ -1,3 +1,4 @@
+import React from "react"
 const statusConfig = {
   upcoming:  { bg: "hsl(182,100%,92%)", color: "hsl(182,100%,25%)", label: "Upcoming" },
   completed: { bg: "#dcfce7",           color: "#166534",            label: "Completed" },

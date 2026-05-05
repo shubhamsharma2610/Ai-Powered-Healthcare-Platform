@@ -1,3 +1,4 @@
+import React from "react"
 import { Icon, icons } from "./shared/Icon";
 
 export default function Topbar({ active, onMenuClick }) {

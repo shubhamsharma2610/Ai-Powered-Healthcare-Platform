@@ -1,3 +1,4 @@
+import React from "react"
 import { Icon, icons } from "./shared/Icon";
 import { patientProfile } from "./shared/data";
 
