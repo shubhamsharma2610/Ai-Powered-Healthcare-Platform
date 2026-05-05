@@ -10,7 +10,7 @@ import FindDoctor from './features/patient/pages/FindDoctor';
 // Protected Route Component
 import PatientDashboard from './features/patient/pages/PatientDashboard';
 import EditProfile from './features/patient/pages/EditProfile';
-
+import PatientProfileSetup from './features/patient/pages/PatientProfileSetup';
 const ProtectedRoute = ({ isAuthenticated }) => {
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -37,8 +37,15 @@ const AppRoutes = () => {
            <Route path="/patient/find-doctor" element={<FindDoctor/>} /> 
 
               <Route path="/patient/dashboard" element={<PatientDashboard/>} /> 
-                  <Route path="/patient/profile-setup" element={<EditProfile/>} /> 
+                  <Route path="/patient/edit-profile" element={<EditProfile/>} /> 
           {/* Baaki patient/doctor routes yahan aayenge */}
+
+
+   <Route path="/patient/profile-setup" element={<PatientProfileSetup/>} />
+
+
+
+
         </Route>
 
       </Route>

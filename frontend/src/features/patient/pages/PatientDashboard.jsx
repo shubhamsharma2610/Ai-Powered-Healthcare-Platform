@@ -27,7 +27,7 @@ function PatientDashboard() {
 
   return (
     <div
-      className="flex h-screen bg-[#f8fafc] overflow-hidden"
+      className="flex h-screen bg-[#f8fafc] "
       style={{ fontFamily: "'Inter',sans-serif" }}
     >
       {/* Sidebar */}

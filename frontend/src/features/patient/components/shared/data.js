@@ -20,21 +20,31 @@ export const overviewCards = [
 ];
 
 export const patientProfile = {
-  name:    "Rahul Sharma",
-  id:      "MED-20240312",
-  avatar:  "RS",
-  role:    "Patient",
+  name:   "Rahul Sharma",
+  id:     "MED-20240312",
+  avatar: "RS",
+  role:   "Patient",
+
   fields: [
-    { label: "Full Name",     value: "Rahul Sharma" },
+    { label: "Full Name",     value: "Rahul Sharma"      },
     { label: "Email",         value: "rahul@example.com" },
-    { label: "Phone",         value: "+91 98765 43210" },
-    { label: "Date of Birth", value: "15 March 1995" },
-    { label: "Blood Group",   value: "B+" },
-    { label: "City",          value: "Ludhiana, Punjab" },
+    { label: "Phone",         value: "+91 98765 43210"   },
+    { label: "Date of Birth", value: "15 March 1995"     },
+    { label: "City",          value: "Ludhiana"          },
+    { label: "State",         value: "Punjab"            },
+    { label: "Gender",        value: "Male"              },
+    { label: "Allergies",     value: "None"              },
   ],
+
   health: [
-    { label: "Blood Group", value: "B+" },
+    { label: "Blood Group", value: "B+"     },
     { label: "Height",      value: "175 cm" },
-    { label: "Weight",      value: "70 kg" },
+    { label: "Weight",      value: "70 kg"  },
   ],
+
+  emergency: {
+    name:     "Amit Sharma",
+    phone:    "+91 91234 56789",
+    relation: "Parent",
+  },
 };
