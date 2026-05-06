@@ -36,7 +36,7 @@ const AppRoutes = () => {
           <Route path="/ai-assistant" element={<AiAssistant />} /> 
            <Route path="/patient/find-doctor" element={<FindDoctor/>} /> 
 
-              <Route path="/patient/dashboard" element={<PatientDashboard/>} /> 
+               
                   <Route path="/patient/edit-profile" element={<EditProfile/>} /> 
           {/* Baaki patient/doctor routes yahan aayenge */}
 
@@ -53,6 +53,7 @@ const AppRoutes = () => {
       {/* 3. Auth Routes (Without Navbar/Footer) */}
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Register />} />
+      <Route path="/patient/dashboard" element={<PatientDashboard/>} />
     </Routes>
   );
 };
