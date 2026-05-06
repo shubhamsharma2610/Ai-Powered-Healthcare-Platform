@@ -16,6 +16,9 @@ export default {
         secondary: {
           DEFAULT: '#2a6f7c', // Muted Teal (Professional look)
         },
+         ternary: {
+          DEFAULT: '#d3ebf5', // Muted Teal (Professional look)
+        },
         accent: {
           DEFAULT: '#ff6b6b', // Emergency ya Alert buttons ke liye (soft red)
         },

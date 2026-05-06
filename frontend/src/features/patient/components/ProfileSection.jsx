@@ -7,7 +7,7 @@ const { name, id, avatar, fields, health, emergency } = patientProfile;
 
 return ( <div className="w-full  bg-red-600 max-w-5xl mx-auto pb-6">
 
-```
+
   {/* Heading */}
   <h2 className="text-2xl font-bold text-gray-800 mb-6 font-[Outfit]">
     My Profile

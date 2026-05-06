@@ -7,10 +7,10 @@ import Register from './features/auth/pages/Register';
 import AiAssistant from './features/ai-assistant/pages/AiAssistant';
 import Services from './features/services/pages/Services';
 import FindDoctor from './features/patient/pages/FindDoctor';
-// Protected Route Component
 import PatientDashboard from './features/patient/pages/PatientDashboard';
 import EditProfile from './features/patient/pages/EditProfile';
 import PatientProfileSetup from './features/patient/pages/PatientProfileSetup';
+
 const ProtectedRoute = ({ isAuthenticated }) => {
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -19,41 +19,46 @@ const ProtectedRoute = ({ isAuthenticated }) => {
 };
 
 const AppRoutes = () => {
-  // Filhal aapne kaha tha hamesha true dikhana hai
-  const isAuth = true; 
+  const isAuth = true;
 
   return (
     <Routes>
-      {/* 1. Wrapper for pages with Navbar/Footer */}
-      <Route element={<MainLayout isAuthenticated={true} />}>
-        
-        {/* Public Routes */}
+
+      {/* ── Dashboard — apna khud ka layout hai, MainLayout se BAHAR ── */}
+<Route element={<MainLayout noPadding={true} />}>
+
+
+  <Route element={<ProtectedRoute isAuthenticated={isAuth} />}>
+    <Route path="/patient/dashboard" element={<PatientDashboard />} />
+  </Route>
+  
+</Route>
+
+      <Route element={<ProtectedRoute isAuthenticated={isAuth} />}>
+        <Route path="/patient/dashboard" element={<PatientDashboard />} />
+      </Route>
+
+      {/* ── Pages with Navbar + Footer (MainLayout) ── */}
+      <Route element={<MainLayout isAuthenticated={isAuth} />}>
+
+        {/* Public */}
         <Route path="/" element={<HomePage />} />
         <Route path="/services" element={<Services />} />
 
-        {/* 2. Protected Routes (Inside the same MainLayout) */}
-        <Route element={<ProtectedRoute isAuthenticated={true} />}>
-          <Route path="/ai-assistant" element={<AiAssistant />} /> 
-           <Route path="/patient/find-doctor" element={<FindDoctor/>} /> 
-
-               
-                  <Route path="/patient/edit-profile" element={<EditProfile/>} /> 
-          {/* Baaki patient/doctor routes yahan aayenge */}
-
-
-   <Route path="/patient/profile-setup" element={<PatientProfileSetup/>} />
-
-
-
-
+        {/* Protected */}
+        <Route element={<ProtectedRoute isAuthenticated={isAuth} />}>
+          <Route path="/ai-assistant"          element={<AiAssistant />} />
+          <Route path="/patient/find-doctor"   element={<FindDoctor />} />
+          <Route path="/patient/edit-profile"  element={<EditProfile />} />
+        
         </Route>
 
       </Route>
 
-      {/* 3. Auth Routes (Without Navbar/Footer) */}
-      <Route path="/login" element={<Login />} />
+      {/* ── Auth (No Navbar/Footer) ── */}
+      <Route path="/login"  element={<Login />} />
       <Route path="/signup" element={<Register />} />
-      <Route path="/patient/dashboard" element={<PatientDashboard/>} />
+
     </Routes>
   );
 };

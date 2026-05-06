@@ -40,7 +40,7 @@ const Navbar = ({ role = "patient", isAuthenticated = true }) => {
 
   return (
     <nav
-      className={`fixed w-full z-50 transition-all duration-300 ${
+      className={`fixed bg-blue-200  h-[80px] w-full z-10 transition-all duration-300 ${
         scrolled
           ? 'bg-white/95 backdrop-blur-md shadow-sm py-2.5'
           : 'bg-transparent py-4'
