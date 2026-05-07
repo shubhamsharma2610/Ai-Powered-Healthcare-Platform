@@ -28,39 +28,17 @@ const AppRoutes = () => {
     <Routes>
 
       {/* Dashboard WITHOUT Navbar/Footer */}
-      <Route element={<ProtectedRoute isAuthenticated={isAuth} />}>
-        <Route
-          path="/patient/dashboard"
-          element={<PatientDashboard />}
-        />
-      </Route>
+      // Patient Dashboard - NO MainLayout (full screen)
+<Route element={<ProtectedRoute isAuthenticated={isAuth} />}>
+  <Route path="/patient/dashboard" element={<PatientDashboard />} />
+</Route>
 
-      {/* Pages WITH Navbar/Footer */}
-      <Route element={<MainLayout isAuthenticated={isAuth} />}>
-
-        {/* Public Routes */}
-        <Route path="/" element={<HomePage />} />
-        <Route path="/services" element={<Services />} />
-
-        {/* Protected Routes */}
-        <Route element={<ProtectedRoute isAuthenticated={isAuth} />}>
-          <Route
-            path="/ai-assistant"
-            element={<AiAssistant />}
-          />
-
-          <Route
-            path="/patient/find-doctor"
-            element={<FindDoctor />}
-          />
-
-          <Route
-            path="/patient/edit-profile"
-            element={<EditProfile />}
-          />
-        </Route>
-
-      </Route>
+// Public Routes - WITH MainLayout (navbar + spacing)
+<Route element={<MainLayout />}>  // ✅ Default pt-20 spacing
+  <Route path="/" element={<HomePage />} />
+  <Route path="/services" element={<Services />} />  // ✅ Fixed
+  <Route path="/ai-assistant" element={<AiAssistant />} />
+</Route>
 
       {/* Auth Pages WITHOUT Navbar/Footer */}
       <Route path="/login" element={<Login />} />

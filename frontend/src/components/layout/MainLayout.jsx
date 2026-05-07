@@ -16,12 +16,11 @@ const MainLayout = ({
         <Navbar isAuthenticated={true} role="patient" />
       )}
 
-      {/* Main Content */}
       <main
         className={
           noPadding
             ? 'flex-1 overflow-hidden'
-            : 'flex-grow pt-10'
+            : 'flex-grow pt-14'
         }
       >
         <Outlet />

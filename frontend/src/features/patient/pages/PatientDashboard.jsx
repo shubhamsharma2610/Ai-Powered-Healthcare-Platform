@@ -33,7 +33,7 @@ export default function PatientDashboard() {
       />
 
       {/* ── MAIN CONTENT AREA ── */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative lg:pl-64">
         
         {/* ── TOPBAR (Isi mein Mobile Header aur Hamburger built-in hai) ── */}
         <Topbar 

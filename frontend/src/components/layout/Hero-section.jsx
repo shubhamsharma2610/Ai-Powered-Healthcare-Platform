@@ -13,7 +13,7 @@ const HeroSection = () => {
   };
 
   return (
-    <section className="relative min-h-screen bg-gray-100 pt-16 pb-16 md:pt-20 md:pb-24 overflow-hidden flex items-center">
+    <section className="relative min-h-screen bg-gray-100 pt-28 pb-6 md:pt-20 md:pb-24 overflow-hidden flex items-center">
 
       {/* Background blobs */}
       <div className="absolute inset-0 -z-10 pointer-events-none">
