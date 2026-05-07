@@ -6,67 +6,56 @@ import AppointmentsSection from "../components/AppointmentsSection";
 import TransactionsSection from "../components/TransactionsSection";
 import ProfileSection from "../components/ProfileSection";
 
-function PatientDashboard() {
-const [active, setActive] = useState("overview");
-const [sidebarOpen, setSidebarOpen] = useState(false);
+export default function PatientDashboard() {
+  const [active, setActive] = useState("overview");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-const renderContent = () => {
-switch (active) {
-case "overview":
-return <OverviewSection />;
-case "appointments":
-return <AppointmentsSection />;
-case "transactions":
-return <TransactionsSection />;
-case "profile":
-return <ProfileSection />;
-default:
-return <OverviewSection />;
+  const renderContent = () => {
+    switch (active) {
+      case "overview":      return <OverviewSection />;
+      case "appointments":  return <AppointmentsSection />;
+      case "transactions":  return <TransactionsSection />;
+      case "profile":       return <ProfileSection />;
+      default:              return <OverviewSection />;
+    }
+  };
+
+  return (
+    <div className="flex h-screen overflow-hidden bg-[#f8fafc]" style={{ fontFamily: "'Inter', sans-serif" }}>
+
+      {/* ── SIDEBAR (Handle both Desktop & Mobile) ── */}
+      {/* Humne Sidebar file mein pehle hi logic likh di hai, bas props pass karne hain */}
+      <Sidebar 
+        active={active} 
+        setActive={setActive} 
+        mobileOpen={sidebarOpen} 
+        onClose={() => setSidebarOpen(false)} 
+      />
+
+      {/* ── MAIN CONTENT AREA ── */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+        
+        {/* ── TOPBAR (Isi mein Mobile Header aur Hamburger built-in hai) ── */}
+        <Topbar 
+          active={active} 
+          onMenuClick={() => setSidebarOpen(true)} 
+        />
+
+        {/* ── SCROLLABLE CONTENT ── */}
+        <main className="flex-1 overflow-y-auto px-4 lg:px-8 py-6 custom-scrollbar">
+          {/* Dashboard Content */}
+          <div className="max-w-7xl mx-auto">
+            {renderContent()}
+          </div>
+        </main>
+      </div>
+
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+      `}</style>
+    </div>
+  );
 }
-};
-
-return (
-<div
-className="flex h-full  overflow-hidden bg-[#f8fafc]"
-style={{ fontFamily: "'Inter', sans-serif" }}
->
-{/* Sidebar */}
-<div
-className={`fixed inset-y-0 left-0 z-40 transition-transform duration-300 lg:static lg:translate-x-0 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
->
-<Sidebar
-active={active}
-setActive={setActive}
-onClose={() => setSidebarOpen(false)}
-/> </div>
-
-```
-  {/* Overlay (Mobile) */}
-  {sidebarOpen && (
-    <div
-      className="fixed inset-0 bg-black/30 z-30 lg:hidden"
-      onClick={() => setSidebarOpen(false)}
-    />
-  )}
-
-  {/* Main Content */}
-  <div className="flex-1 flex flex-col min-h-0">
-    <Topbar
-      active={active}
-      onMenuClick={() => setSidebarOpen(true)}
-    />
-
-    {/* ONLY SCROLL AREA */}
-    <main className="flex-1 overflow-y-auto min-h-0 px-6 py-6 no-scrollbar">
-      {renderContent()}
-    </main>
-  </div>
-</div>
-
-
-);
-}
-
-export default PatientDashboard;
