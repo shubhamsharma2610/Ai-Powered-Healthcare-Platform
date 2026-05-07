@@ -27,7 +27,7 @@ return <OverviewSection />;
 
 return (
 <div
-className="flex h-full pt-20 overflow-hidden bg-[#f8fafc]"
+className="flex h-full  overflow-hidden bg-[#f8fafc]"
 style={{ fontFamily: "'Inter', sans-serif" }}
 >
 {/* Sidebar */}

@@ -5,7 +5,7 @@ import { patientProfile } from "./shared/data";
 export default function ProfileSection() {
 const { name, id, avatar, fields, health, emergency } = patientProfile;
 
-return ( <div className="w-full  bg-red-600 max-w-5xl mx-auto pb-6">
+return ( <div className="w-full max-w-5xl mx-auto pb-6">
 
 
   {/* Heading */}

@@ -1,6 +1,8 @@
 import React from 'react';
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
+
 import MainLayout from './components/layout/MainLayout.jsx';
+
 import HomePage from './features/home/pages/HomePage.jsx';
 import Login from './features/auth/pages/Login';
 import Register from './features/auth/pages/Register';
@@ -15,6 +17,7 @@ const ProtectedRoute = ({ isAuthenticated }) => {
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
+
   return <Outlet />;
 };
 
@@ -24,39 +27,43 @@ const AppRoutes = () => {
   return (
     <Routes>
 
-      {/* ── Dashboard — apna khud ka layout hai, MainLayout se BAHAR ── */}
-<Route element={<MainLayout noPadding={true} />}>
-
-
-  <Route element={<ProtectedRoute isAuthenticated={isAuth} />}>
-    <Route path="/patient/dashboard" element={<PatientDashboard />} />
-  </Route>
-  
-</Route>
-
+      {/* Dashboard WITHOUT Navbar/Footer */}
       <Route element={<ProtectedRoute isAuthenticated={isAuth} />}>
-        <Route path="/patient/dashboard" element={<PatientDashboard />} />
+        <Route
+          path="/patient/dashboard"
+          element={<PatientDashboard />}
+        />
       </Route>
 
-      {/* ── Pages with Navbar + Footer (MainLayout) ── */}
+      {/* Pages WITH Navbar/Footer */}
       <Route element={<MainLayout isAuthenticated={isAuth} />}>
 
-        {/* Public */}
+        {/* Public Routes */}
         <Route path="/" element={<HomePage />} />
         <Route path="/services" element={<Services />} />
 
-        {/* Protected */}
+        {/* Protected Routes */}
         <Route element={<ProtectedRoute isAuthenticated={isAuth} />}>
-          <Route path="/ai-assistant"          element={<AiAssistant />} />
-          <Route path="/patient/find-doctor"   element={<FindDoctor />} />
-          <Route path="/patient/edit-profile"  element={<EditProfile />} />
-        
+          <Route
+            path="/ai-assistant"
+            element={<AiAssistant />}
+          />
+
+          <Route
+            path="/patient/find-doctor"
+            element={<FindDoctor />}
+          />
+
+          <Route
+            path="/patient/edit-profile"
+            element={<EditProfile />}
+          />
         </Route>
 
       </Route>
 
-      {/* ── Auth (No Navbar/Footer) ── */}
-      <Route path="/login"  element={<Login />} />
+      {/* Auth Pages WITHOUT Navbar/Footer */}
+      <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Register />} />
 
     </Routes>

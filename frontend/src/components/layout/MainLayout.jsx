@@ -3,19 +3,35 @@ import { Outlet } from 'react-router-dom';
 import Navbar from './Navbar';
 import Footer from './Footer';
 
-const MainLayout = ({ noPadding = false }) => {
+const MainLayout = ({
+  noPadding = false,
+  showNavbar = true,
+  showFooter = true,
+}) => {
   return (
     <div className="flex flex-col min-h-screen">
-      <Navbar isAuthenticated={true} role="patient" />
-      
-      <main className={noPadding ? "flex-1 overflow-hidden" : "flex-grow pt-10"}>
+
+      {/* Navbar */}
+      {showNavbar && (
+        <Navbar isAuthenticated={true} role="patient" />
+      )}
+
+      {/* Main Content */}
+      <main
+        className={
+          noPadding
+            ? 'flex-1 overflow-hidden'
+            : 'flex-grow pt-10'
+        }
+      >
         <Outlet />
       </main>
-      
-      <Footer />
+
+      {/* Footer */}
+      {showFooter && <Footer />}
+
     </div>
   );
 };
-
 
 export default MainLayout;
