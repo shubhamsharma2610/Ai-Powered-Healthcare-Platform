@@ -12,7 +12,7 @@ import FindDoctor from './features/patient/pages/FindDoctor';
 import PatientDashboard from './features/patient/pages/PatientDashboard';
 import EditProfile from './features/patient/pages/EditProfile';
 import PatientProfileSetup from './features/patient/pages/PatientProfileSetup';
-
+import AuthLayout from './components/layout/AuthLayout.jsx';
 const ProtectedRoute = ({ isAuthenticated }) => {
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -41,8 +41,10 @@ const AppRoutes = () => {
 </Route>
 
       {/* Auth Pages WITHOUT Navbar/Footer */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Register />} />
+      <Route element={<AuthLayout />}>
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Register />} />
+        </Route>
 
     </Routes>
   );
