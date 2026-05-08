@@ -10,7 +10,7 @@ function AiAssistant() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 pb-4 lg:pb-6" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 pt-14 pb-4 lg:pb-6" style={{ fontFamily: "'Inter', sans-serif" }}>
       <div className="max-w-6xl mx-auto px-4 lg:px-8">
           {/* Header Section */}
           <div className="text-center mb-8 lg:mb-10">

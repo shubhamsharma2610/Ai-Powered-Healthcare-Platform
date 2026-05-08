@@ -20,7 +20,7 @@ const MainLayout = ({
         className={
           noPadding
             ? 'flex-1 overflow-hidden'
-            : 'flex-grow pt-14'
+            : 'flex-grow mt-14'
         }
       >
         <Outlet />
