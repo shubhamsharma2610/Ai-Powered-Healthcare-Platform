@@ -1,14 +1,14 @@
-import app from './src/app.js'
-import connectDB from "./src/config/db.js"
-import dotenv from "dotenv"
-dotenv.config()
-// Database connection 
 
+import 'dotenv/config';
+import app from './src/app.js'
+
+const { default: connectDB } = await import("./src/config/db.js")
+
+// Database connection
 connectDB()
 
+const PORT = process.env.PORT || 3001
 
-const PORT=process.env.PORT || 3001 
-
-app.listen(PORT,(req,res)=>{
-    console.log("Server is running on  http://localhost:3000")
+app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`)
 })
