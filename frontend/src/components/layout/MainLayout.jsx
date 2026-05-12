@@ -13,7 +13,7 @@ const MainLayout = ({
 
       {/* Navbar */}
       {showNavbar && (
-        <Navbar isAuthenticated={true} role="patient" />
+        <Navbar isAuthenticated={true} role="doctor" />
       )}
 
       <main

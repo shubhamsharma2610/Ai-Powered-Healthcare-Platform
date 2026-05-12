@@ -13,6 +13,9 @@ import PatientDashboard from './features/patient/pages/PatientDashboard';
 import EditProfile from './features/patient/pages/EditProfile';
 import PatientProfileSetup from './features/patient/pages/PatientProfileSetup';
 import AuthLayout from './components/layout/AuthLayout.jsx';
+
+// ✅ NEW: Doctor Dashboard Import
+import DoctorDashboard from './features/doctor/pages/DoctorDashboard';
 const ProtectedRoute = ({ isAuthenticated }) => {
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -31,6 +34,13 @@ const AppRoutes = () => {
       // Patient Dashboard - NO MainLayout (full screen)
 <Route element={<ProtectedRoute isAuthenticated={isAuth} />}>
   <Route path="/patient/dashboard" element={<PatientDashboard />} />
+
+
+
+
+  // ✅ NEW: Doctor Dashboard Route
+  <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
+  
 </Route>
 
 // Public Routes - WITH MainLayout (navbar + spacing)

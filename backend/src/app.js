@@ -1,38 +1,64 @@
-// src/app.js
 import express from 'express';
-// import cors from 'cors';
-// import helmet from 'helmet';
-// import morgan from 'morgan';
+import authRoutes from './routes/authRoutes.js';
+import { errorHandler } from './utils/errorHandler.js';
 
 const app = express();
 
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Optional: CORS configuration (uncomment if needed)
+// import cors from 'cors';
 // app.use(cors({
-//     origin: process.env.FRONTEND_URL || 'http://localhost:3001',
-//     credentials: true,
-//     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-//     allowedHeaders: ['Content-Type', 'Authorization']
+//   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+//   credentials: true,
+//   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+//   allowedHeaders: ['Content-Type', 'Authorization']
 // }));
 
-app.use(express.json()); // Parse JSON bodies
-app.use(express.urlencoded({ extended: true })); // Parse 
-app.get('/api/test', (req, res) => {
-    res.status(200).json({
-        success: true,
-        message: 'Server is running!',
-        timestamp: new Date().toISOString()
-    });
-});
+// ==========================================
+// ROUTES
+// ==========================================
 
+// Auth Routes
+app.use('/api/auth', authRoutes);
 
+// Health Check Endpoint
 app.get('/api/health', (req, res) => {
-    res.status(200).json({
-        success: true,
-        status: 'healthy',
-        uptime: process.uptime(),
-        timestamp: new Date().toISOString()
-    });
+  res.status(200).json({
+    success: true,
+    status: 'healthy',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
 });
 
+// Test Endpoint
+app.get('/api/test', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Server is running!',
+    timestamp: new Date().toISOString(),
+    version: '1.0.0'
+  });
+});
 
+// ==========================================
+// ERROR HANDLING
+// ==========================================
+
+// 404 Not Found Handler
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    statusCode: 404,
+    message: `Route ${req.method} ${req.path} not found`
+  });
+});
+
+// Global Error Handler (Must be last)
+app.use(errorHandler);
 
 export default app;
