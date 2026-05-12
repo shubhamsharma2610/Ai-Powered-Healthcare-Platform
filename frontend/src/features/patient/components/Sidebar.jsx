@@ -1,17 +1,17 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate,Link } from "react-router-dom";
 
 // ──────────────────────────────────────────────
 // 🔁 Navigation Items
 // ──────────────────────────────────────────────
 const navItems = [
-  { 
-    id: "home", 
-    label: "Home", 
-    path: "/", 
-    badge: null, 
-    Icon: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg> 
-  },
+  // { 
+  //   id: "home", 
+  //   label: "Home", 
+  //   path: "/", 
+  //   badge: null, 
+  //   Icon: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg> 
+  // },
   { id: "overview", label: "Overview", path: null, badge: null, Icon: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> },
   { id: "appointments", label: "Appointments", path: null, badge: "3", Icon: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> },
   { id: "transactions", label: "Transactions", path: null, badge: null, Icon: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> },
@@ -56,10 +56,13 @@ function SidebarContent({ active, setActive, onClose }) {
       
       {/* Logo Section */}
       <div className="flex items-center justify-between px-6 py-5 border-b border-gray-50 shrink-0">
+         <Link to="/">
         <div className="flex items-center gap-3">
+        
           <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-primary text-white shadow-lg shadow-primary/20">
             <Ico.Logo />
           </div>
+      
           <div>
             <h1 className="font-display text-lg font-black text-gray-800 leading-none">
               Medi<span className="text-primary">AI</span>
@@ -67,6 +70,7 @@ function SidebarContent({ active, setActive, onClose }) {
             <p className="text-[9px] font-bold tracking-widest text-gray-400 uppercase mt-1">Smart Health</p>
           </div>
         </div>
+           </Link>
         
         {/* Mobile Close Button */}
         {onClose && (
