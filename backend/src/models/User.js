@@ -25,7 +25,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Password is required'],
       minlength: [6, 'Password must be at least 6 characters'],
-      select: false // Don't return password by default
+      select: false
     },
     role: {
       type: String,
@@ -56,21 +56,18 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Index for faster queries
-userSchema.index({ email: 1 });
 userSchema.index({ role: 1 });
 
-// Hash password before saving
-userSchema.pre('save', async function(next) {
+// ✅ FIXED - Hash password before saving (without using next)
+userSchema.pre('save', async function() {
   // Only hash if password is new or modified
-  if (!this.isModified('password')) return next();
-
+  if (!this.isModified('password')) return;
+  
   try {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
-    next();
   } catch (error) {
-    next(error);
+    throw new Error(`Password hashing failed: ${error.message}`);
   }
 });
 

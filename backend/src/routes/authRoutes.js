@@ -16,11 +16,11 @@ const router = Router();
 
 // Register Route - Create new user
 // Body: { fullName, email, password, confirmPassword, role, ...otherData }
-router.post('/register', guestMiddleware, register);
+router.post('/register', register);
 
 // Login Route - Authenticate user
 // Body: { email, password }
-router.post('/login', guestMiddleware, login);
+router.post('/login', login);
 
 /**
  * PROTECTED ROUTES

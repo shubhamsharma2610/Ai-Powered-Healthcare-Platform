@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-
+import cookies from 'cookie-parser';
 export const generateToken = (userId, role, expiresIn = '7d') => {
   try {
     const token = jwt.sign(
@@ -7,6 +7,10 @@ export const generateToken = (userId, role, expiresIn = '7d') => {
       process.env.JWT_SECRET || 'your-secret-key-change-in-env',
       { expiresIn }
     );
+
+    
+
+
     return token;
   } catch (error) {
     console.error('Token generation error:', error);

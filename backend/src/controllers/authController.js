@@ -52,86 +52,77 @@ export const register = asyncHandler(async (req, res) => {
 
   let newUser;
 
-  try {
-    if (role === 'patient') {
-      // Create Patient user
-      newUser = new Patient({
-        fullName: fullName.trim(),
-        email: email.toLowerCase(),
-        password,
-        role: 'patient',
-        age: otherData.age,
-        gender: otherData.gender,
-        bloodType: otherData.bloodType,
-        phoneNumber: otherData.phoneNumber
-      });
-    } else if (role === 'doctor') {
-      // Validate doctor-specific fields
-      const { licenseNumber, specialization, experience } = otherData;
+  // REMOVED the try-catch block - asyncHandler will handle errors
+  if (role === 'patient') {
+    // Create Patient user
+    newUser = new Patient({
+      fullName: fullName.trim(),
+      email: email.toLowerCase(),
+      password,
+      role: 'patient',
+      age: otherData.age,
+      gender: otherData.gender,
+      bloodType: otherData.bloodType,
+      phoneNumber: otherData.phoneNumber
+    });
+  } else if (role === 'doctor') {
+    // Validate doctor-specific fields
+    const { licenseNumber, specialization, experience } = otherData;
 
-      if (!licenseNumber || !specialization || experience === undefined) {
-        return res.status(400).json({
-          success: false,
-          message: 'Doctor requires license number, specialization, and experience',
-          statusCode: 400
-        });
-      }
-
-      // Check if license number is unique
-      const existingDoctor = await Doctor.findOne({ licenseNumber });
-      if (existingDoctor) {
-        return res.status(400).json({
-          success: false,
-          message: 'License number already registered',
-          statusCode: 400
-        });
-      }
-
-      // Create Doctor user
-      newUser = new Doctor({
-        fullName: fullName.trim(),
-        email: email.toLowerCase(),
-        password,
-        role: 'doctor',
-        licenseNumber: licenseNumber.trim(),
-        specialization,
-        experience: parseInt(experience),
-        phoneNumber: otherData.phoneNumber,
-        bio: otherData.bio,
-        clinicAddress: otherData.clinicAddress,
-        consultationFee: otherData.consultationFee,
-        qualifications: otherData.qualifications || []
-      });
-    } else {
+    if (!licenseNumber || !specialization || experience === undefined) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid role. Must be patient or doctor',
+        message: 'Doctor requires license number, specialization, and experience',
         statusCode: 400
       });
     }
 
-    // Save user to database
-    await newUser.save();
+    // Check if license number is unique
+    const existingDoctor = await Doctor.findOne({ licenseNumber });
+    if (existingDoctor) {
+      return res.status(400).json({
+        success: false,
+        message: 'License number already registered',
+        statusCode: 400
+      });
+    }
 
-    // Generate JWT token
-    const token = generateToken(newUser._id, newUser.role);
-
-    return res.status(201).json({
-      success: true,
-      message: SUCCESS_MESSAGES.SIGNUP_SUCCESS,
-      statusCode: 201,
-      token,
-      user: newUser.toJSON()
+    // Create Doctor user
+    newUser = new Doctor({
+      fullName: fullName.trim(),
+      email: email.toLowerCase(),
+      password,
+      role: 'doctor',
+      licenseNumber: licenseNumber.trim(),
+      specialization,
+      experience: parseInt(experience),
+      phoneNumber: otherData.phoneNumber,
+      bio: otherData.bio,
+      clinicAddress: otherData.clinicAddress,
+      consultationFee: otherData.consultationFee,
+      qualifications: otherData.qualifications || []
     });
-  } catch (error) {
-    console.error('Register error:', error);
-    return res.status(500).json({
+  } else {
+    return res.status(400).json({
       success: false,
-      message: ERROR_MESSAGES.SERVER_ERROR,
-      statusCode: 500,
-      error: error.message
+      message: 'Invalid role. Must be patient or doctor',
+      statusCode: 400
     });
   }
+
+  // Save user to database
+  await newUser.save();
+
+  // Generate JWT token
+  const token = generateToken(newUser._id, newUser.role);
+
+  return res.status(201).json({
+    success: true,
+    message: SUCCESS_MESSAGES.SIGNUP_SUCCESS,
+    statusCode: 201,
+    token,
+    user: newUser.toJSON()
+  });
 });
 
 /**
@@ -185,6 +176,11 @@ export const login = asyncHandler(async (req, res) => {
 
     // Generate JWT token
     const token = generateToken(user._id, user.role);
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: false, // true in production with HTTPS
+      maxAge: 24 * 60 * 60 * 1000
+    });
 
     return res.status(200).json({
       success: true,
