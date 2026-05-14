@@ -1,11 +1,14 @@
 import express from 'express';
 import authRoutes from './routes/authRoutes.js';
 import { errorHandler } from './utils/errorHandler.js';
-
+import cookieParser from "cookie-parser"
+import dns from "dns"
+dns.setServers(['8.8.8.8', '1.1.1.1']);
 const app = express();
 
 // Middleware
 app.use(express.json());
+app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 
 // Optional: CORS configuration (uncomment if needed)

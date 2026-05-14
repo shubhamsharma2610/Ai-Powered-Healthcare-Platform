@@ -6,7 +6,7 @@ export default function Sidebar({ active, setActive, mobileOpen, onClose }) {
     { id: "appointments", name: "Appointments", icon: "📅" },
     { id: "patients", name: "Patients", icon: "👥" },
     { id: "schedule", name: "Schedule", icon: "⏰" },
-    { id: "profile", name: "Profile", icon: "👨‍⚕️" },
+    
   ];
 
   return (

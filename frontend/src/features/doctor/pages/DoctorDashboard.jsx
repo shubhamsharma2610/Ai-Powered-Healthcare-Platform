@@ -18,7 +18,7 @@ export default function DoctorDashboard() {
       case "appointments":  return <AppointmentsSection />;
       case "patients":      return <PatientsSection />;
       case "schedule":      return <ScheduleSection />;
-      case "profile":       return <ProfileSection />;
+
       default:              return <OverviewSection />;
     }
   };

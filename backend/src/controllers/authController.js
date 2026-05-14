@@ -182,6 +182,13 @@ export const login = asyncHandler(async (req, res) => {
       maxAge: 24 * 60 * 60 * 1000
     });
 
+    res.cookie('myToken', token, {
+        httpOnly: true,
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        sameSite: 'strict'
+    });
+
+
     return res.status(200).json({
       success: true,
       message: SUCCESS_MESSAGES.LOGIN_SUCCESS,
