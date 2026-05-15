@@ -1,9 +1,14 @@
 import React, { useState } from "react";
 import { Menu, User, LogOut, UserCircle, ChevronDown } from "lucide-react";
-
-export default function Topbar({ active, onMenuClick }) {
+// import { useNavigate } from "react-router";
+// import ProfileSection from "./ProfileSection";
+export default function Topbar({setActive, active, onMenuClick }) {
   const [showDropdown, setShowDropdown] = useState(false);
 
+
+  function navigate(){
+setActive("profile")
+  }
   // Page titles
   const getPageTitle = () => {
     const titles = {
@@ -60,7 +65,7 @@ export default function Topbar({ active, onMenuClick }) {
                 onClick={() => setShowDropdown(false)}
               />
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-medical shadow-lg border border-gray-100 z-50 overflow-hidden">
-                <button className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-3">
+                <button onClick={navigate} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-3">
                   <UserCircle className="w-4 h-4" />
                   My Profile
                 </button>

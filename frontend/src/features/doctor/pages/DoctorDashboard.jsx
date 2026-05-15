@@ -7,7 +7,7 @@ import AppointmentsSection from "../components/AppointmentsSection";
 import PatientsSection from "../components/PatientsSection";
 import ScheduleSection from "../components/ScheduleSection";
 import ProfileSection from "../components/ProfileSection";
-
+import Profile from "../components/ProfileSection";
 export default function DoctorDashboard() {
   const [active, setActive] = useState("overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -18,7 +18,7 @@ export default function DoctorDashboard() {
       case "appointments":  return <AppointmentsSection />;
       case "patients":      return <PatientsSection />;
       case "schedule":      return <ScheduleSection />;
-
+      case "profile":       return <Profile/>
       default:              return <OverviewSection />;
     }
   };
@@ -40,6 +40,7 @@ export default function DoctorDashboard() {
         {/* TOPBAR */}
         <Topbar 
           active={active} 
+          setActive={setActive}
           onMenuClick={() => setSidebarOpen(true)} 
         />
 
