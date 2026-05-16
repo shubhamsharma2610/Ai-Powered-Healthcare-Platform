@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { Menu, User, LogOut, UserCircle, ChevronDown } from "lucide-react";
-// import { useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 // import ProfileSection from "./ProfileSection";
 export default function Topbar({setActive, active, onMenuClick }) {
   const [showDropdown, setShowDropdown] = useState(false);
 
 
-  function navigate(){
+  function profilefun(){
 setActive("profile")
   }
   // Page titles
@@ -20,6 +20,12 @@ setActive("profile")
     };
     return titles[active] || "Dashboard";
   };
+
+  const navigate=useNavigate()
+
+  function logout(){
+    navigate("/login")
+  }
 
   return (
     <header className="bg-white border-b border-gray-100 px-4 lg:px-6 py-3 sticky top-0 z-20">
@@ -65,11 +71,11 @@ setActive("profile")
                 onClick={() => setShowDropdown(false)}
               />
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-medical shadow-lg border border-gray-100 z-50 overflow-hidden">
-                <button onClick={navigate} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-3">
+                <button onClick={profilefun} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-3">
                   <UserCircle className="w-4 h-4" />
                   My Profile
                 </button>
-                <button className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-3 border-t border-gray-100">
+                <button onClick={logout} className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-3 border-t border-gray-100">
                   <LogOut className="w-4 h-4" />
                   Logout
                 </button>

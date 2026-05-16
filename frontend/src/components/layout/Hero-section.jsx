@@ -102,7 +102,7 @@ const HeroSection = () => {
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
-                onClick={() => navigate('/ai-assistant')}
+                onClick={() => navigate('/ai-upload-report')}
                 className="flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl font-bold text-white text-sm sm:text-base transition-all duration-200"
                 style={{
                   background: 'hsl(182,100%,37%)',
