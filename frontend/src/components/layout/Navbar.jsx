@@ -147,7 +147,7 @@ const Navbar = ({ role = "patient", isAuthenticated = true }) => {
             {/* Find Doctor */}
             {(!role || role === 'patient') && (
               <Link
-                to="/patient/find-doctor"
+                to="/find-doctor"
                 className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-[hsl(182,100%,37%)] transition-colors duration-200"
               >
                 <Search size={16} />

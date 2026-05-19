@@ -13,7 +13,7 @@ const HeroSection = () => {
   };
 
   return (
-    <section className="relative min-h-screen bg-gray-100 pt-28 pb-6 md:pt-20 md:pb-24 overflow-hidden flex items-center">
+    <section className="relative min-h-screen bg-gray-100  pb-6 md:pt-10 md:pb-24 overflow-hidden flex items-center">
 
       {/* Background blobs */}
       <div className="absolute inset-0 -z-10 pointer-events-none">
@@ -117,7 +117,7 @@ const HeroSection = () => {
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
-                onClick={() => navigate('/patient/find-doctor')}
+                onClick={() => navigate('/find-doctor')}
                 className="flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl font-bold text-sm sm:text-base border-2 bg-white transition-all duration-200 hover:bg-[hsl(182,100%,97%)]"
                 style={{
                   borderColor: 'hsl(182,100%,75%)',
