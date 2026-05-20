@@ -13,25 +13,25 @@ import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '../constants/roles.js';
 export const register = asyncHandler(async (req, res) => {
   const { fullName, email, password, confirmPassword, role, ...otherData } = req.body;
 
-  // Validation: Check all required fields
-  if (!fullName || !email || !password || !confirmPassword || !role) {
+  // ✅ ONLY required fields check
+  if (!fullName || !email || !password || !role) {
     return res.status(400).json({
       success: false,
-      message: ERROR_MESSAGES.MISSING_FIELDS,
+      message: "Full name, email, password and role are required",
       statusCode: 400
     });
   }
 
-  // Validation: Password match
-  if (password !== confirmPassword) {
+  // ✅ Check password match only if confirmPassword is provided
+  if (confirmPassword && password !== confirmPassword) {
     return res.status(400).json({
       success: false,
-      message: ERROR_MESSAGES.PASSWORD_MISMATCH,
+      message: "Passwords do not match",
       statusCode: 400
     });
   }
 
-  // Validation: Password length
+  // Password length check
   if (password.length < 6) {
     return res.status(400).json({
       success: false,
@@ -45,16 +45,14 @@ export const register = asyncHandler(async (req, res) => {
   if (existingUser) {
     return res.status(400).json({
       success: false,
-      message: ERROR_MESSAGES.EMAIL_EXISTS,
+      message: 'Email already registered',
       statusCode: 400
     });
   }
 
   let newUser;
 
-  // REMOVED the try-catch block - asyncHandler will handle errors
   if (role === 'patient') {
-    // Create Patient user
     newUser = new Patient({
       fullName: fullName.trim(),
       email: email.toLowerCase(),
@@ -65,8 +63,8 @@ export const register = asyncHandler(async (req, res) => {
       bloodType: otherData.bloodType,
       phoneNumber: otherData.phoneNumber
     });
-  } else if (role === 'doctor') {
-    // Validate doctor-specific fields
+  } 
+  else if (role === 'doctor') {
     const { licenseNumber, specialization, experience } = otherData;
 
     if (!licenseNumber || !specialization || experience === undefined) {
@@ -77,7 +75,6 @@ export const register = asyncHandler(async (req, res) => {
       });
     }
 
-    // Check if license number is unique
     const existingDoctor = await Doctor.findOne({ licenseNumber });
     if (existingDoctor) {
       return res.status(400).json({
@@ -87,7 +84,6 @@ export const register = asyncHandler(async (req, res) => {
       });
     }
 
-    // Create Doctor user
     newUser = new Doctor({
       fullName: fullName.trim(),
       email: email.toLowerCase(),
@@ -102,7 +98,8 @@ export const register = asyncHandler(async (req, res) => {
       consultationFee: otherData.consultationFee,
       qualifications: otherData.qualifications || []
     });
-  } else {
+  } 
+  else {
     return res.status(400).json({
       success: false,
       message: 'Invalid role. Must be patient or doctor',
@@ -110,21 +107,17 @@ export const register = asyncHandler(async (req, res) => {
     });
   }
 
-  // Save user to database
   await newUser.save();
-
-  // Generate JWT token
   const token = generateToken(newUser._id, newUser.role);
 
   return res.status(201).json({
     success: true,
-    message: SUCCESS_MESSAGES.SIGNUP_SUCCESS,
+    message: "Registration successful",
     statusCode: 201,
     token,
     user: newUser.toJSON()
   });
 });
-
 /**
  * LOGIN - Authenticate user with email and password
  * @route POST /api/auth/login

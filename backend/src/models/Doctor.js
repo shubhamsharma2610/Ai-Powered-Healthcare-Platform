@@ -47,7 +47,8 @@ const doctorSchema = new mongoose.Schema(
     },
     consultationFee: {
       type: Number,
-      min: [0, 'Fee cannot be negative']
+      min: [0, 'Fee cannot be negative'],
+      default: 0
     },
     availability: [
       {
@@ -63,12 +64,19 @@ const doctorSchema = new mongoose.Schema(
         }
       }
     ],
-    profilePicture: String,
+    profilePicture: {
+      type: String,
+      default: '' // Empty string means no image uploaded yet
+    },
     bio: {
       type: String,
-      maxlength: [500, 'Bio cannot exceed 500 characters']
+      maxlength: [500, 'Bio cannot exceed 500 characters'],
+      default: ''
     },
-    phoneNumber: String,
+    phoneNumber: {
+      type: String,
+      match: [/^[0-9]{10}$/, 'Please enter valid phone number']
+    },
     rating: {
       type: Number,
       default: 0,
@@ -98,6 +106,7 @@ const doctorSchema = new mongoose.Schema(
 // Index for faster queries
 doctorSchema.index({ specialization: 1 });
 doctorSchema.index({ isApproved: 1 });
+doctorSchema.index({ consultationFee: 1 }); // Add this for filtering by fee
 
 const Doctor = User.discriminator('doctor', doctorSchema);
 export default Doctor;

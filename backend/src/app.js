@@ -1,5 +1,7 @@
 import express from 'express';
 import authRoutes from './routes/authRoutes.js';
+import doctorRoutes from './routes/doctorRoutes.js';
+import appointmentRoutes from './routes/appointmentRoutes.js';
 import { errorHandler } from './utils/errorHandler.js';
 import cookieParser from "cookie-parser"
 import dns from "dns"
@@ -26,7 +28,8 @@ app.use(express.urlencoded({ extended: true }));
 
 // Auth Routes
 app.use('/api/auth', authRoutes);
-
+app.use('/api/doctors', doctorRoutes);
+app.use('/api/appointments', appointmentRoutes);
 // Health Check Endpoint
 app.get('/api/health', (req, res) => {
   res.status(200).json({
