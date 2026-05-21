@@ -1,7 +1,7 @@
 import express from 'express';
 import authRoutes from './routes/authRoutes.js';
 import doctorRoutes from './routes/doctorRoutes.js';
-import appointmentRoutes from './routes/appointmentRoutes.js';
+import appointmentRoutes from './routes/appointmentsRoutes.js';
 import { errorHandler } from './utils/errorHandler.js';
 import cookieParser from "cookie-parser"
 import dns from "dns"

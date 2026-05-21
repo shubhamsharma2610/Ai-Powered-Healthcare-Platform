@@ -4,7 +4,7 @@ import {
   getMyAppointments,
   cancelAppointment,
   updateAppointmentStatus
-} from '../controllers/appointmentController.js';
+} from '../controllers/appointmentsController.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 
 const router = Router();
