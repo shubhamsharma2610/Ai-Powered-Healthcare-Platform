@@ -4,9 +4,21 @@ import doctorRoutes from './routes/doctorRoutes.js';
 import appointmentRoutes from './routes/appointmentsRoutes.js';
 import { errorHandler } from './utils/errorHandler.js';
 import cookieParser from "cookie-parser"
-import dns from "dns"
+import cors from 'cors';
+import dns from "dns";
 dns.setServers(['8.8.8.8', '1.1.1.1']);
+
 const app = express();
+app.options('/*', cors());
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://localhost:3000'], // Multiple origins
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
+
+// Handle preflight requests
+// app.options('*', cors());
 
 // Middleware
 app.use(express.json());

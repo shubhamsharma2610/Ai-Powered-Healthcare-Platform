@@ -113,9 +113,9 @@ export const register = asyncHandler(async (req, res) => {
   return res.status(201).json({
     success: true,
     message: "Registration successful",
-    statusCode: 201,
-    token,
-    user: newUser.toJSON()
+    statusCode: 201
+    // token,
+    // user: newUser.toJSON()
   });
 });
 /**

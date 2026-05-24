@@ -2,6 +2,9 @@ import axios from "axios";
 
 const API = axios.create({
   baseURL: `${import.meta.env.VITE_BACKEND_BASE_URL}/api/auth`,
+   headers: { 'Content-Type': 'application/json' }, headers: {
+    "Content-Type": "application/json"
+  }
 });
 
 // Register API
