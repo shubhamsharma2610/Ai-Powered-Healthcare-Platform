@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { User, Mail, Lock, ArrowRight, Eye, EyeOff, Stethoscope, UserCircle, Activity } from 'lucide-react';
-import { register, clearError } from '../../../redux/slices/authSlice';
+import { register, clearError, logout } from '../../../redux/slices/authSlice';
 
 export default function Register() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  // Form fields - exactly as per backend models
+  // Form fields
   const [role, setRole] = useState('patient');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -18,30 +18,33 @@ export default function Register() {
   const [showCf, setShowCf] = useState(false);
   const [agreed, setAgreed] = useState(false);
   
-  // Doctor specific fields (from doctorSchema)
+  // Doctor specific fields
   const [licenseNumber, setLicenseNumber] = useState('');
   const [specialization, setSpecialization] = useState('');
   const [experience, setExperience] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   
-  // Frontend validation
+  // Local state
   const [localError, setLocalError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   // Redux state
-  const { isLoading, isAuthenticated, error, role: userRole } = useSelector((state) => state.auth);
+  const { isLoading, error } = useSelector((state) => state.auth);
 
-  // Redirect after successful registration
+  // Clear success message after 3 seconds
   useEffect(() => {
-    if (isAuthenticated && userRole) {
-      if (userRole === 'admin') navigate('/admin');
-      else if (userRole === 'doctor') navigate('/doctor/dashboard');
-      else navigate('/patient/dashboard');
+    if (successMessage) {
+      const timer = setTimeout(() => {
+        setSuccessMessage('');
+      }, 3000);
+      return () => clearTimeout(timer);
     }
-  }, [isAuthenticated, userRole, navigate]);
+  }, [successMessage]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLocalError('');
+    setSuccessMessage('');
     
     // Basic validations
     if (!fullName || !email || !password || !confirmPassword) {
@@ -72,7 +75,7 @@ export default function Register() {
       }
     }
     
-    // Prepare data as per backend expectations
+    // Prepare data
     const registerData = {
       fullName,
       email,
@@ -81,7 +84,6 @@ export default function Register() {
       role
     };
     
-    // Add doctor fields if role is doctor
     if (role === 'doctor') {
       registerData.licenseNumber = licenseNumber;
       registerData.specialization = specialization;
@@ -89,8 +91,23 @@ export default function Register() {
       if (phoneNumber) registerData.phoneNumber = phoneNumber;
     }
     
-    // Dispatch Redux action
-    dispatch(register(registerData));
+    // Dispatch register action
+    const result = await dispatch(register(registerData));
+    
+    // Check if registration was successful
+    if (register.fulfilled.match(result)) {
+      // ✅ Success - logout automatically and redirect to login
+      alert("Sucessfully registered! Please log in with your new account.");
+      setSuccessMessage('Registration successful! Redirecting to login...');
+      
+      // Clear any existing token
+      dispatch(logout());
+      
+      // Redirect to login page after 2 seconds
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
+    }
   };
 
   const pwStrength = password.length >= 10 ? 'Strong' : password.length >= 6 ? 'Fair' : 'Weak';
@@ -99,7 +116,7 @@ export default function Register() {
   const inputCls = 'w-full pl-9 pr-3 py-2.5 text-[13px] text-gray-900 bg-white border border-gray-200 rounded-xl outline-none placeholder-gray-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all';
 
   return (
-    <div className="w-full max-w-md mx-auto">
+    <div className="w-full max-w-md mx-auto h-screen overflow-y-auto py-6">
       {/* Header */}
       <div className="mb-6 text-center">
         <div className="inline-flex items-center gap-2 bg-primary/10 px-3 py-1.5 rounded-full mb-3">
@@ -114,6 +131,20 @@ export default function Register() {
           </Link>
         </p>
       </div>
+
+      {/* Success Message */}
+      {successMessage && (
+        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl text-sm text-green-600">
+          ✅ {successMessage}
+        </div>
+      )}
+
+      {/* Error Messages */}
+      {(localError || error) && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
+          {localError || error}
+        </div>
+      )}
 
       {/* Role Toggle */}
       <div className="flex gap-2 mb-5 p-1 bg-gray-100 rounded-xl">
@@ -135,13 +166,6 @@ export default function Register() {
           </button>
         ))}
       </div>
-
-      {/* Error Messages */}
-      {(localError || error) && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
-          {localError || error}
-        </div>
-      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Name & Email */}

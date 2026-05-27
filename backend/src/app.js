@@ -11,13 +11,20 @@ dns.setServers(['8.8.8.8', '1.1.1.1']);
 const app = express();
 // app.options('/*', cors());
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000',"https://fantastic-invention-gxq7ggjgvp7xhwww9-5173.app.github.dev/"],
+  origin: ['http://localhost:5173', 'http://localhost:3000',"https://fantastic-invention-gxq7ggjgvp7xhwww9-5173.app.github.dev","https://fantastic-invention-gxq7ggjgvp7xhwww9.github.dev",
+    "https://fantastic-invention-gxq7ggjgvp7xhwww9-5173.app.github.dev"
+  ],
    // Multiple origins
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
-
+// app.use(cors({
+//   origin: '*',  // 👈 Star = All origins allowed
+//   credentials: true,
+//   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+//   allowedHeaders: ['Content-Type', 'Authorization']
+// }));
 // Handle preflight requests
 // app.options('*', cors());
 

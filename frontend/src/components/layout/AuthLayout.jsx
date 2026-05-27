@@ -25,13 +25,11 @@ export default function AuthLayout() {
   const isLogin = pathname === '/login' || pathname === '/';
 
   return (
-    // Fixed full-viewport container — no scroll ever
-    <div className="h-screen w-screen overflow-hidden flex flex-col font-sans bg-background-soft">
+    // ✅ Fixed: Allow scrolling on entire page
+    <div className="min-h-screen w-full flex flex-col font-sans bg-background-soft">
 
-      {/* ══════════════════════════════════════════════
-          HEADER  — fixed height, never grows
-      ══════════════════════════════════════════════ */}
-      <header className="flex-none h-14 flex items-center justify-between px-8 bg-background-card border-b border-ternary z-50 shadow-soft">
+      {/* HEADER */}
+      <header className="flex-none h-14 flex items-center justify-between px-4 sm:px-8 bg-background-card border-b border-ternary z-50 shadow-soft">
 
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5 no-underline">
@@ -44,16 +42,16 @@ export default function AuthLayout() {
         </Link>
 
         {/* Nav */}
-        <nav className="flex items-center gap-6">
+        <nav className="flex items-center gap-3 sm:gap-6">
           <Link
             to="/"
-            className="flex items-center gap-1.5 text-[13px] font-medium text-gray-500 hover:text-primary transition-colors no-underline"
+            className="hidden sm:flex items-center gap-1.5 text-[13px] font-medium text-gray-500 hover:text-primary transition-colors no-underline"
           >
             <Home size={14} /> Home
           </Link>
           <Link
             to="/help"
-            className="flex items-center gap-1.5 text-[13px] font-medium text-gray-500 hover:text-primary transition-colors no-underline"
+            className="hidden sm:flex items-center gap-1.5 text-[13px] font-medium text-gray-500 hover:text-primary transition-colors no-underline"
           >
             <HelpCircle size={14} /> Support
           </Link>
@@ -66,41 +64,35 @@ export default function AuthLayout() {
         </nav>
       </header>
 
-      {/* ══════════════════════════════════════════════
-          BODY  — fills remaining height exactly
-      ══════════════════════════════════════════════ */}
-      <div className="flex flex-1 overflow-hidden min-h-0">
+      {/* BODY - Responsive layout */}
+      <div className="flex-1 flex flex-col lg:flex-row">
 
-        {/* ──────────────────────────────────────────
-            LEFT PANEL  — exactly 50 % wide, no scroll
-        ────────────────────────────────────────── */}
-        <div className="hidden lg:flex w-1/2 flex-none flex-col justify-between p-10 relative overflow-hidden"
+        {/* LEFT PANEL - Hidden on mobile, visible on desktop */}
+        <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-10 relative overflow-hidden"
           style={{
             background: 'linear-gradient(155deg, hsl(182,100%,12%) 0%, hsl(182,100%,20%) 45%, hsl(182,100%,30%) 100%)',
+            minHeight: 'calc(100vh - 56px)',
           }}
         >
-          {/* Blob top-right */}
+          {/* Background blobs */}
           <div className="absolute -top-24 -right-24 w-80 h-80 rounded-full pointer-events-none"
             style={{ background: 'radial-gradient(circle, hsl(182,100%,60%) 0%, transparent 70%)', opacity: 0.08 }}
           />
-          {/* Blob bottom-left */}
           <div className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full pointer-events-none"
             style={{ background: 'radial-gradient(circle, hsl(182,100%,50%) 0%, transparent 70%)', opacity: 0.07 }}
           />
+          
           {/* Grid overlay */}
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
-              backgroundImage:
-                'linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px)',
+              backgroundImage: 'linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px)',
               backgroundSize: '40px 40px',
             }}
           />
 
-          {/* ── TOP CONTENT ── */}
+          {/* Content */}
           <div className="relative z-10 flex flex-col gap-7">
-
-            {/* Live badge */}
             <div className="inline-flex items-center gap-2 self-start px-4 py-1.5 rounded-full bg-white/10 border border-white/20">
               <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
               <span className="text-[10px] font-bold uppercase tracking-widest text-white/80">
@@ -108,7 +100,6 @@ export default function AuthLayout() {
               </span>
             </div>
 
-            {/* Headline */}
             <div>
               <h1 className="text-[36px] font-extrabold font-display leading-[1.12] text-white mb-3">
                 Your health,<br />
@@ -123,18 +114,13 @@ export default function AuthLayout() {
               </p>
             </div>
 
-            {/* Feature cards 2×2 */}
+            {/* Feature cards */}
             <div className="grid grid-cols-2 gap-2.5">
               {features.map((f, i) => (
-                <div
-                  key={i}
-                  className="flex items-start gap-3 p-3.5 rounded-2xl border border-white/10 hover:border-white/20 transition-colors"
-                  style={{ background: 'rgba(255,255,255,0.05)' }}
-                >
-                  <div
-                    className="w-7 h-7 min-w-[28px] rounded-lg flex items-center justify-center flex-shrink-0"
-                    style={{ background: 'hsl(182,100%,37%,0.25)', color: 'hsl(182,100%,75%)' }}
-                  >
+                <div key={i} className="flex items-start gap-3 p-3.5 rounded-2xl border border-white/10 hover:border-white/20 transition-colors"
+                  style={{ background: 'rgba(255,255,255,0.05)' }}>
+                  <div className="w-7 h-7 min-w-[28px] rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ background: 'hsl(182,100%,37%,0.25)', color: 'hsl(182,100%,75%)' }}>
                     {f.icon}
                   </div>
                   <div>
@@ -159,22 +145,16 @@ export default function AuthLayout() {
             </div>
           </div>
 
-          {/* ── AI CHIP (bottom) ── */}
-          <div
-            className="relative z-10 flex items-center gap-3 p-3.5 rounded-2xl border border-white/10"
-            style={{ background: 'rgba(255,255,255,0.06)' }}
-          >
+          {/* AI Chip */}
+          <div className="relative z-10 flex items-center gap-3 p-3.5 rounded-2xl border border-white/10 mt-8"
+            style={{ background: 'rgba(255,255,255,0.06)' }}>
             <div className="relative flex-shrink-0">
-              <div
-                className="w-10 h-10 rounded-full flex items-center justify-center"
-                style={{ background: 'linear-gradient(135deg, hsl(182,100%,55%), hsl(182,100%,30%))' }}
-              >
+              <div className="w-10 h-10 rounded-full flex items-center justify-center"
+                style={{ background: 'linear-gradient(135deg, hsl(182,100%,55%), hsl(182,100%,30%))' }}>
                 <Activity size={18} className="text-white" />
               </div>
-              <span
-                className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full border-2"
-                style={{ background: '#4ade80', borderColor: 'hsl(182,100%,12%)' }}
-              />
+              <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full border-2"
+                style={{ background: '#4ade80', borderColor: 'hsl(182,100%,12%)' }} />
             </div>
             <div>
               <p className="text-[12px] font-bold text-white">AI Health Assistant</p>
@@ -185,23 +165,19 @@ export default function AuthLayout() {
           </div>
         </div>
 
-        {/* ──────────────────────────────────────────
-            RIGHT PANEL  — exactly 50 %, no scroll
-        ────────────────────────────────────────── */}
-        <div className="w-full lg:w-1/2 flex-none flex flex-col overflow-hidden bg-background-soft">
-
-          {/* Form — centered, fills all space between header & footer */}
-          <div className="flex-1 flex items-center justify-center px-8 min-h-0 overflow-hidden">
-            <div className="w-full max-w-[400px]">
+        {/* RIGHT PANEL - Scrollable form area */}
+        <div className="w-full lg:w-1/2 flex flex-col bg-background-soft min-h-screen lg:min-h-0">
+          
+          {/* Scrollable Form Container */}
+          <div className="flex-1 overflow-y-auto py-8 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-md mx-auto">
               <Outlet />
             </div>
           </div>
 
-          {/* ── FOOTER ── fixed at bottom of right panel */}
-          <footer className="flex-none bg-background-card border-t border-ternary">
-
-            {/* Upper row */}
-            <div className="px-6 py-3 flex items-center justify-between gap-4 border-b border-ternary">
+          {/* FOOTER */}
+          <footer className="bg-background-card border-t border-ternary">
+            <div className="px-4 sm:px-6 py-3 flex items-center justify-between gap-4 flex-wrap border-b border-ternary">
               <Link to="/" className="flex items-center gap-2 no-underline">
                 <div className="w-6 h-6 rounded-lg bg-primary flex items-center justify-center">
                   <Activity size={13} className="text-white" />
@@ -220,12 +196,11 @@ export default function AuthLayout() {
               </div>
             </div>
 
-            {/* Lower row */}
-            <div className="px-6 py-2.5 flex items-center justify-between gap-3 flex-wrap">
-              <span className="text-[10px] text-gray-400">
+            {/* <div className="px-4 sm:px-6 py-2.5 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <span className="text-[10px] text-gray-400 order-2 sm:order-1">
                 © {new Date().getFullYear()} HealthSync Inc. All rights reserved.
               </span>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 order-1 sm:order-2">
                 {footerLinks.map(item => (
                   <Link
                     key={item}
@@ -236,9 +211,8 @@ export default function AuthLayout() {
                   </Link>
                 ))}
               </div>
-            </div>
+            </div> */}
           </footer>
-
         </div>
       </div>
     </div>
