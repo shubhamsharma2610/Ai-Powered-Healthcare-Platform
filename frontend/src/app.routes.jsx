@@ -3,7 +3,7 @@ import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 
 import MainLayout from './components/layout/MainLayout.jsx';
 import AuthLayout from './components/layout/AuthLayout.jsx';
-import AdminLayout from './features/admin/AdminLayout.jsx';  // 👈 ADD THIS
+import AdminLayout from './features/admin/AdminLayout.jsx';
 
 // Public Pages
 import HomePage from './features/home/pages/HomePage.jsx';
@@ -12,7 +12,11 @@ import Register from './features/auth/pages/Register';
 import AiUploadReport from './features/ai-assistant/pages/AiUploadReport.jsx';
 import AIResultPage from './features/ai-assistant/pages/AiResultReport.jsx';
 import Services from './features/services/pages/Services';
-import FindDoctor from './features/patient/pages/FindDoctor';
+
+// ✅ Fixed: Import FindDoctorsPage from correct location
+import FindDoctorsPage from './features/find-doctors/pages/FindDoctorsPage.jsx';
+import DoctorProfilePage from './features/find-doctors/pages/DoctorProfilePage.jsx';
+import BookingPage from './features/find-doctors/pages/BookingPage.jsx';
 
 // Patient Pages
 import PatientDashboard from './features/patient/pages/PatientDashboard';
@@ -22,7 +26,7 @@ import PatientProfileSetup from './features/patient/pages/PatientProfileSetup';
 // Doctor Pages
 import DoctorDashboard from './features/doctor/pages/DoctorDashboard';
 
-// 👈 ADD ADMIN PAGES
+// Admin Pages
 import AdminOverview from './features/admin/pages/Overview';
 import AdminDoctors from './features/admin/pages/Doctors';
 import AdminRequests from './features/admin/pages/Requests';
@@ -34,12 +38,8 @@ const ProtectedRoute = ({ isAuthenticated }) => {
   return <Outlet />;
 };
 
-// 👈 ADD ADMIN PROTECTED ROUTE (optional - agar admin login chahiye)
 const AdminProtectedRoute = ({ isAuthenticated }) => {
-  // Temporary - hardcoded true for testing
-  // Baad mein real auth check karna
   const isAdmin = true; // localStorage.getItem("admin_role") === "admin"
-  
   if (!isAdmin) {
     return <Navigate to="/login" replace />;
   }
@@ -65,20 +65,27 @@ const AppRoutes = () => {
       <Route element={<ProtectedRoute isAuthenticated={isAuth} />}>
         <Route path="/patient/dashboard" element={<PatientDashboard />} />
         <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
+        {/* ✅ Add Patient Appointments Route */}
+        <Route path="/patient/appointments" element={<div>My Appointments Page</div>} />
       </Route>
 
       {/* ==================== PUBLIC ROUTES (with Navbar/Footer) ==================== */}
       <Route element={<MainLayout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/services" element={<Services />} />
-        <Route path="/find-doctor" element={<FindDoctor />} />
+        
+        {/* ✅ Fixed: Find Doctors Routes */}
+        <Route path="/find-doctors" element={<FindDoctorsPage />} />
+        <Route path="/doctor/:id" element={<DoctorProfilePage />} />
+        <Route path="/doctor/:id/book" element={<BookingPage />} />
+        
         <Route path="/ai-upload-report" element={<AiUploadReport />} />
         <Route path="/ai-result-upload" element={<AIResultPage />} />
         <Route path="/patient/profile-setup" element={<PatientProfileSetup />} />
         <Route path="/patient/edit-profile" element={<EditProfile />} />
       </Route>
 
-      {/* ==================== AUTH ROUTES (without Navbar/Footer) ==================== */}
+      {/* ==================== AUTH ROUTES ==================== */}
       <Route element={<AuthLayout />}>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Register />} />

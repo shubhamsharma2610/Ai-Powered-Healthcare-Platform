@@ -2,6 +2,7 @@ import express from 'express';
 import authRoutes from './routes/authRoutes.js';
 import doctorRoutes from './routes/doctorRoutes.js';
 import appointmentRoutes from './routes/appointmentsRoutes.js';
+import paymentRoutes from './routes/paymentRoutes.js';  
 import { errorHandler } from './utils/errorHandler.js';
 import cookieParser from "cookie-parser"
 import cors from 'cors';
@@ -47,9 +48,19 @@ app.use(express.urlencoded({ extended: true }));
 // ==========================================
 
 // Auth Routes
+
+
 app.use('/api/auth', authRoutes);
+
 app.use('/api/doctors', doctorRoutes);
+
 app.use('/api/appointments', appointmentRoutes);
+
+app.use('/api/payments', paymentRoutes);
+
+
+
+
 // Health Check Endpoint
 app.get('/api/health', (req, res) => {
   res.status(200).json({

@@ -93,9 +93,11 @@ const doctorSchema = new mongoose.Schema(
         ref: 'Patient'
       }
     ],
+
+    // change after testing
     isApproved: {
       type: Boolean,
-      default: false
+      default: true 
     },
     approvedAt: Date,
     rejectionReason: String

@@ -96,7 +96,8 @@ export const register = asyncHandler(async (req, res) => {
       bio: otherData.bio,
       clinicAddress: otherData.clinicAddress,
       consultationFee: otherData.consultationFee,
-      qualifications: otherData.qualifications || []
+      qualifications: otherData.qualifications || [],
+      isApproved: true
     });
   } 
   else {

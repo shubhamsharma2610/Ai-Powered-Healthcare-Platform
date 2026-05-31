@@ -68,31 +68,38 @@ export const getAllDoctors = async (req, res) => {
     // Execute queries in parallel
     const [doctors, totalCount] = await Promise.all([
       Doctor.find(filter)
-        .populate('_id', 'fullName email profilePicture') // Populate User fields
         .sort(sortOptions)
         .skip(skip)
         .limit(parseInt(limit)),
       Doctor.countDocuments(filter)
     ]);
 
+    // Get User data for all doctors (Doctor inherits from User)
+    const doctorIds = doctors.map(d => d._id);
+    const users = await User.find({ _id: { $in: doctorIds } }).select('fullName email profilePicture');
+    const userMap = new Map(users.map(u => [u._id.toString(), u]));
+
     // Format response
-    const formattedDoctors = doctors.map(doctor => ({
-      id: doctor._id._id || doctor._id,
-      fullName: doctor._id.fullName,
-      email: doctor._id.email,
-      profilePicture: doctor.profilePicture || doctor._id.profilePicture,
-      specialization: doctor.specialization,
-      experience: doctor.experience,
-      consultationFee: doctor.consultationFee,
-      rating: doctor.rating,
-      totalConsultations: doctor.totalConsultations,
-      clinicAddress: doctor.clinicAddress,
-      qualifications: doctor.qualifications,
-      bio: doctor.bio,
-      phoneNumber: doctor.phoneNumber,
-      availability: doctor.availability,
-      isApproved: doctor.isApproved
-    }));
+    const formattedDoctors = doctors.map(doctor => {
+      const user = userMap.get(doctor._id.toString());
+      return {
+        id: doctor._id,
+        fullName: user?.fullName || 'Unknown',
+        email: user?.email || '',
+        profilePicture: doctor.profilePicture || user?.profilePicture || '',
+        specialization: doctor.specialization,
+        experience: doctor.experience,
+        consultationFee: doctor.consultationFee,
+        rating: doctor.rating,
+        totalConsultations: doctor.totalConsultations,
+        clinicAddress: doctor.clinicAddress,
+        qualifications: doctor.qualifications,
+        bio: doctor.bio,
+        phoneNumber: doctor.phoneNumber,
+        availability: doctor.availability,
+        isApproved: doctor.isApproved
+      };
+    });
 
     res.status(200).json({
       success: true,

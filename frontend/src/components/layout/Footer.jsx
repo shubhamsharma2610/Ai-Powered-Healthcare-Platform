@@ -51,7 +51,7 @@ const Footer = () => {
             <ul className="space-y-4 text-sm text-gray-400">
               <li><Link to="/" className="hover:text-white transition-colors">Home Page</Link></li>
               <li><Link to="/ai-assistant" className="hover:text-white transition-colors">AI Health Assistant</Link></li>
-              <li><Link to="/patient/find-doctor" className="hover:text-white transition-colors">Find Specialist</Link></li>
+              <li><Link to="/find-doctors" className="hover:text-white transition-colors">Find Specialist</Link></li>
               <li><Link to="/services" className="hover:text-white transition-colors">Medical Services</Link></li>
             </ul>
           </div>

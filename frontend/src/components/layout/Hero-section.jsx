@@ -117,7 +117,7 @@ const HeroSection = () => {
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
-                onClick={() => navigate('/find-doctor')}
+                onClick={() => navigate('/find-doctors')}
                 className="flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl font-bold text-sm sm:text-base border-2 bg-white transition-all duration-200 hover:bg-[hsl(182,100%,97%)]"
                 style={{
                   borderColor: 'hsl(182,100%,75%)',
