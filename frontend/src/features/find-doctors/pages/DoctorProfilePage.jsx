@@ -5,10 +5,12 @@ import { fetchDoctorById, clearSelectedDoctor } from '../../../redux/slices/doct
 import { MapPin, Clock, DollarSign, Star, Briefcase, Award, ChevronLeft, Calendar } from 'lucide-react';
 
 export default function DoctorProfilePage() {
+
+
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { selectedDoctor, loading } = useSelector((state) => state.doctors);
+  const { selectedDoctor, loading, error } = useSelector((state) => state.doctors);
   const { isAuthenticated } = useSelector((state) => state.auth);
   
   const [selectedDate, setSelectedDate] = useState('');
@@ -40,6 +42,14 @@ export default function DoctorProfilePage() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-red-500">Error: {error}</p>
+      </div>
+    );
+  }
+
   if (!selectedDoctor) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -48,12 +58,22 @@ export default function DoctorProfilePage() {
     );
   }
 
+  // ✅ FIXED: Use selectedDoctor directly
+  const doctorFullName = selectedDoctor?.fullName || selectedDoctor?._id?.fullName || selectedDoctor?.name || 'Doctor Name';
+  const doctorSpecialization = selectedDoctor?.specialization || 'Specialist';
+  const doctorRating = selectedDoctor?.rating || 4.5;
+  const doctorExperience = selectedDoctor?.experience || 0;
+  const doctorFee = selectedDoctor?.consultationFee || 500;
+  const doctorBio = selectedDoctor?.bio || 'Experienced doctor dedicated to providing quality healthcare.';
+  const doctorQualifications = selectedDoctor?.qualifications || [];
+  const doctorClinicAddress = selectedDoctor?.clinicAddress || {};
+
   const availableSlots = ['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00'];
+
 
   return (
     <div className="min-h-screen bg-surface-soft py-8">
       <div className="max-w-4xl mx-auto px-4">
-        {/* Back Button */}
         <button 
           onClick={() => navigate('/find-doctors')}
           className="flex items-center gap-1 text-sm text-gray-500 hover:text-primary mb-4 transition-colors"
@@ -61,72 +81,67 @@ export default function DoctorProfilePage() {
           <ChevronLeft size={16} /> Back to Doctors
         </button>
 
-        {/* Doctor Card */}
         <div className="bg-white rounded-medical shadow-card overflow-hidden">
-          {/* Header */}
           <div className="bg-primary-50 px-6 py-5">
             <div className="flex flex-col md:flex-row gap-5">
               <div className="w-24 h-24 rounded-full bg-primary-100 flex items-center justify-center text-4xl">
                 👨‍⚕️
               </div>
               <div className="flex-1">
-                <h1 className="text-xl font-bold text-gray-900 font-display">{selectedDoctor.fullName}</h1>
-                <p className="text-sm text-primary capitalize">{selectedDoctor.specialization}</p>
+                {/* ✅ Now shows correct doctor name */}
+                <h1 className="text-xl font-bold text-gray-900 font-display">{doctorFullName}</h1>
+                <p className="text-sm text-primary capitalize">{doctorSpecialization}</p>
                 <div className="flex flex-wrap gap-4 mt-2">
                   <div className="flex items-center gap-1 text-sm text-gray-600">
                     <Star size={14} className="text-yellow-400 fill-yellow-400" />
-                    <span>{selectedDoctor.rating || '4.8'}</span>
+                    <span>{doctorRating}</span>
                   </div>
                   <div className="flex items-center gap-1 text-sm text-gray-600">
                     <Briefcase size={14} />
-                    <span>{selectedDoctor.experience} years</span>
+                    <span>{doctorExperience} years</span>
                   </div>
                 </div>
               </div>
               <div className="text-right">
                 <div className="inline-block bg-primary-50 rounded-medical px-4 py-2">
                   <p className="text-xs text-gray-500">Consultation Fee</p>
-                  <p className="text-xl font-bold text-primary">₹{selectedDoctor.consultationFee || 500}</p>
+                  <p className="text-xl font-bold text-primary">₹{doctorFee}</p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Body */}
           <div className="p-6 space-y-5">
-            {/* About */}
             <div>
               <h2 className="text-md font-semibold text-gray-800 mb-1">About</h2>
-              <p className="text-sm text-gray-500">{selectedDoctor.bio || 'Experienced doctor dedicated to providing quality healthcare.'}</p>
+              <p className="text-sm text-gray-500">{doctorBio}</p>
             </div>
 
-            {/* Qualifications */}
-            {selectedDoctor.qualifications?.length > 0 && (
+            {doctorQualifications.length > 0 && (
               <div>
                 <h2 className="text-md font-semibold text-gray-800 mb-2 flex items-center gap-2">
                   <Award size={16} /> Qualifications
                 </h2>
                 <div className="space-y-1">
-                  {selectedDoctor.qualifications.map((qual, idx) => (
+                  {doctorQualifications.map((qual, idx) => (
                     <p key={idx} className="text-sm text-gray-500">• {qual.degree} from {qual.institution}</p>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Location */}
-            {selectedDoctor.clinicAddress && (
+            {doctorClinicAddress?.city && (
               <div>
                 <h2 className="text-md font-semibold text-gray-800 mb-2 flex items-center gap-2">
                   <MapPin size={16} /> Location
                 </h2>
                 <p className="text-sm text-gray-500">
-                  {selectedDoctor.clinicAddress.street}, {selectedDoctor.clinicAddress.city}
+                  {doctorClinicAddress.street && `${doctorClinicAddress.street}, `}
+                  {doctorClinicAddress.city}
                 </p>
               </div>
             )}
 
-            {/* Booking Section */}
             <div className="border-t border-gray-100 pt-5">
               <h2 className="text-md font-semibold text-gray-800 mb-3 flex items-center gap-2">
                 <Calendar size={16} /> Book Appointment

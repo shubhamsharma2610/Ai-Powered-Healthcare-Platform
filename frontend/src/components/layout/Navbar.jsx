@@ -67,9 +67,9 @@ const Navbar = () => {
     
     if (role === 'patient') {
       return [
-        { to: '/patient/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { to: '/patient/appointments', label: 'My Appointments', icon: Calendar },  // ✅ Uncommented
-        { to: '/patient/profile', label: 'Profile', icon: User },
+        { to: '/patient/dashboard', label: 'Dashboard', icon: LayoutDashboard }
+        // { to: '/patient/appointments', label: 'My Appointments', icon: Calendar },  // ✅ Uncommented
+        // { to: '/patient/profile', label: 'Profile', icon: User },
       ];
     }
     

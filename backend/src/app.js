@@ -2,6 +2,7 @@ import express from 'express';
 import authRoutes from './routes/authRoutes.js';
 import doctorRoutes from './routes/doctorRoutes.js';
 import appointmentRoutes from './routes/appointmentsRoutes.js';
+import patientRoutes from './routes/patientRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';  
 import { errorHandler } from './utils/errorHandler.js';
 import cookieParser from "cookie-parser"
@@ -58,7 +59,7 @@ app.use('/api/appointments', appointmentRoutes);
 
 app.use('/api/payments', paymentRoutes);
 
-
+app.use('/api/patients', patientRoutes);
 
 
 // Health Check Endpoint

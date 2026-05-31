@@ -83,7 +83,7 @@ export const getAllDoctors = async (req, res) => {
     const formattedDoctors = doctors.map(doctor => {
       const user = userMap.get(doctor._id.toString());
       return {
-        id: doctor._id,
+        id: String(doctor._id),
         fullName: user?.fullName || 'Unknown',
         email: user?.email || '',
         profilePicture: doctor.profilePicture || user?.profilePicture || '',
@@ -135,16 +135,8 @@ export const getDoctorById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Find doctor by ID (either User ID or Doctor ID)
-    let doctor;
-    
-    // First try to find as Doctor document
-    doctor = await Doctor.findById(id).populate('_id', 'fullName email profilePicture createdAt');
-    
-    // If not found, try to find by User ID
-    if (!doctor) {
-      doctor = await Doctor.findOne({ _id: id }).populate('_id', 'fullName email profilePicture createdAt');
-    }
+    // Find doctor by ID (discriminator uses the same _id as the User document)
+    const doctor = await Doctor.findById(id);
 
     if (!doctor) {
       return res.status(404).json({
@@ -155,21 +147,22 @@ export const getDoctorById = async (req, res) => {
 
     // Check if doctor is approved (optional - maybe show pending doctors to admin only)
     if (!doctor.isApproved) {
-      // Check if requesting user is admin (you can add this logic)
-      // For now, return 404 for unapproved doctors to public
       return res.status(404).json({
         success: false,
         message: 'Doctor not found'
       });
     }
 
+    // Get the user record for the doctor to fetch name/email/profile picture
+    const user = await User.findById(doctor._id).select('fullName email profilePicture createdAt');
+
     // Format response
     const formattedDoctor = {
-      id: doctor._id._id || doctor._id,
-      fullName: doctor._id.fullName,
-      email: doctor._id.email,
-      profilePicture: doctor.profilePicture || doctor._id.profilePicture,
-      createdAt: doctor._id.createdAt,
+      id: String(doctor._id),
+      fullName: doctor.fullName || user?.fullName || 'Doctor Name',
+      email: doctor.email || user?.email || '',
+      profilePicture: doctor.profilePicture || user?.profilePicture || '',
+      createdAt: doctor.createdAt || user?.createdAt,
       licenseNumber: doctor.licenseNumber,
       specialization: doctor.specialization,
       experience: doctor.experience,
@@ -228,7 +221,7 @@ export const getDoctorsBySpecialization = async (req, res) => {
     }).populate('_id', 'fullName email profilePicture');
 
     const formattedDoctors = doctors.map(doctor => ({
-      id: doctor._id._id || doctor._id,
+      id: String(doctor._id?._id || doctor._id),
       fullName: doctor._id.fullName,
       specialization: doctor.specialization,
       experience: doctor.experience,

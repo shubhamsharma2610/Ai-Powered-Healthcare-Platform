@@ -4,7 +4,20 @@ import User from '../models/User.js';
 
 // Middleware to verify JWT token
 export const authMiddleware = asyncHandler(async (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
+  // ✅ Step 1: Try to get token from cookie FIRST
+  let token = req.cookies?.token || req.cookies?.myToken;
+  
+  // ✅ Step 2: Fallback to Authorization header
+  if (!token && req.headers.authorization?.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
+  }
+  
+  // ✅ Debug log
+  // console.log('🔐 Auth Debug:', { 
+  //   hasCookie: !!req.cookies,
+  //   hasToken: !!token,
+  //   cookieKeys: req.cookies ? Object.keys(req.cookies) : []
+  // });
 
   if (!token) {
     return res.status(401).json({
@@ -24,6 +37,7 @@ export const authMiddleware = asyncHandler(async (req, res, next) => {
     });
   }
 
+  // ✅ decoded contains { userId, role }
   const user = await User.findById(decoded.userId);
 
   if (!user) {
@@ -68,7 +82,11 @@ export const roleMiddleware = (...allowedRoles) => {
 
 // Middleware to allow only unauthenticated users
 export const guestMiddleware = (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
+  // ✅ Check both cookie and header
+  let token = req.cookies?.token || req.cookies?.myToken;
+  if (!token && req.headers.authorization?.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
+  }
 
   if (token) {
     return res.status(400).json({

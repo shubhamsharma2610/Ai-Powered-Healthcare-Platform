@@ -79,7 +79,7 @@ export default function BookingPage() {
             razorpay_signature: response.razorpay_signature,
             appointmentId: appointment._id
           });
-          navigate('/patient/appointments');
+          navigate('/patient/dashboard');
         },
         prefill: {
           name: patientName,

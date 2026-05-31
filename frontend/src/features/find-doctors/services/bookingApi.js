@@ -5,17 +5,22 @@ const API_URL = import.meta.env.VITE_BACKEND_BASE_URL || 'http://localhost:5000/
 const api = axios.create({
   baseURL: API_URL,
   headers: { 'Content-Type': 'application/json' },
-//   withCredentials: true, // Include cookies for authentication
+  withCredentials: true,  // ✅ Cookie automatically bhejne ke liye - YAHI KAafi HAI
 });
 
-// Add token to requests
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+// ❌ Remove or simplify interceptor - Cookie already handles auth
+api.interceptors.request.use(
+  (config) => {
+    // Debug log only - No token extraction needed
+    console.log('📡 API Call:', {
+      url: config.url,
+      method: config.method,
+      withCredentials: config.withCredentials
+    });
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 // Create appointment
 export const createAppointment = async (bookingData) => {

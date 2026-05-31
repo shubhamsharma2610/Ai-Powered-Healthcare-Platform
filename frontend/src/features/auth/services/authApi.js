@@ -2,7 +2,7 @@ import axios from "axios";
 import Cookies from 'js-cookie';
 
 const API = axios.create({
-  baseURL: `${import.meta.env.VITE_BACKEND_BASE_URL}/api/auth`,
+  baseURL: `${import.meta.env.VITE_BACKEND_BASE_URL}/auth`,
   headers: { 'Content-Type': 'application/json' },
   withCredentials: true  // 👈 IMPORTANT - Send cookies with requests
 });

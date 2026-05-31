@@ -41,7 +41,7 @@ export default function DoctorCard({ doctor }) {
 
         {/* Button */}
         <Link
-          to={`/doctor/${doctor.id}`}
+          to={`/doctor/${doctor.id || doctor._id}`}
           className="mt-4 w-full block text-center px-4 py-2.5 bg-primary text-white rounded-medical text-sm font-medium hover:bg-primary-600 transition-all"
         >
           View Profile →
