@@ -1,4 +1,3 @@
-// models/Appointment.js
 import mongoose from 'mongoose';
 
 const appointmentSchema = new mongoose.Schema({
@@ -36,7 +35,48 @@ const appointmentSchema = new mongoose.Schema({
   },
   paymentId: String,
   symptoms: String,
-  notes: String
+  notes: String,
+  
+  // ✅ NEW FIELDS (SAFE - Optional, no breaking changes)
+  // For cancellation tracking
+  cancelledBy: {
+    type: String,
+    enum: ['patient', 'doctor', 'admin', null],
+    default: null
+  },
+  cancelledAt: {
+    type: Date,
+    default: null
+  },
+  cancellationReason: {
+    type: String,
+    default: ''
+  },
+  
+  // For doctor side
+  doctorNotes: {
+    type: String,
+    default: ''
+  },
+  prescription: {
+    type: String,
+    default: ''
+  },
+  
+  // For video call
+  meetingLink: {
+    type: String,
+    default: ''
+  },
+  meetingId: {
+    type: String,
+    default: ''
+  }
 }, { timestamps: true });
+
+// Index for faster queries
+appointmentSchema.index({ patientId: 1, date: -1 });
+appointmentSchema.index({ doctorId: 1, date: 1 });
+appointmentSchema.index({ status: 1 });
 
 export default mongoose.model('Appointment', appointmentSchema);

@@ -1,5 +1,8 @@
 import mongoose from 'mongoose';
-
+import './User.js';
+import './Patient.js';
+import './Doctor.js';      // Doctor before Payment
+import './Appointment.js'; // Appointment before Payment
 const paymentSchema = new mongoose.Schema({
   appointmentId: {
     type: mongoose.Schema.Types.ObjectId,

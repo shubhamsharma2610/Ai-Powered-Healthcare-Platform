@@ -12,6 +12,7 @@
   "type": "module",
   "description": "",
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
@@ -19,7 +20,10 @@
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.6.2",
+    "multer": "^2.1.1",
     "nodemon": "^3.1.14",
+    "pdf-parse": "^2.4.5",
+    "pdf-parser": "^1.0.5",
     "razorpay": "^2.9.6"
   }
 }

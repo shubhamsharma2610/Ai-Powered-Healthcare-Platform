@@ -110,5 +110,5 @@ doctorSchema.index({ specialization: 1 });
 doctorSchema.index({ isApproved: 1 });
 doctorSchema.index({ consultationFee: 1 }); // Add this for filtering by fee
 
-const Doctor = User.discriminator('doctor', doctorSchema);
+const Doctor = User.discriminator('Doctor', doctorSchema);
 export default Doctor;

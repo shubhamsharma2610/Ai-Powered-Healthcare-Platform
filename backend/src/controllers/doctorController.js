@@ -1,5 +1,10 @@
+// import Doctor from '../models/Doctor.js';
+// import User from '../models/User.js';
+
 import Doctor from '../models/Doctor.js';
 import User from '../models/User.js';
+import Appointment from '../models/Appointment.js';
+import Payment from '../models/Payment.js';
 
 /**
  * @desc    Get all approved doctors with filtering and pagination
@@ -265,5 +270,252 @@ export const getSpecializations = async (req, res) => {
       message: 'Failed to fetch specializations',
       error: error.message
     });
+  }
+};
+
+
+
+ /* @desc    Get doctor profile (protected)
+ * @route   GET /api/doctors/profile
+ * @access  Private (Doctor only)
+ */
+export const getDoctorProfile = async (req, res) => {
+  try {
+    const doctor = await Doctor.findById(req.user.id)
+      .populate('_id', 'fullName email profilePicture createdAt');
+    
+    if (!doctor) {
+      return res.status(404).json({ success: false, message: 'Doctor not found' });
+    }
+    
+    res.json({ success: true, data: doctor });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * @desc    Update doctor profile
+ * @route   PUT /api/doctors/profile
+ * @access  Private (Doctor only)
+ */
+export const updateDoctorProfile = async (req, res) => {
+  try {
+    const { phoneNumber, bio, clinicAddress, consultationFee } = req.body;
+    
+    const doctor = await Doctor.findByIdAndUpdate(
+      req.user.id,
+      { phoneNumber, bio, clinicAddress, consultationFee },
+      { new: true, runValidators: true }
+    ).populate('_id', 'fullName email');
+    
+    res.json({ success: true, data: doctor });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * @desc    Get doctor's appointments
+ * @route   GET /api/doctors/appointments
+ * @access  Private (Doctor only)
+ */
+export const getDoctorAppointments = async (req, res) => {
+  try {
+    const { status, date, page = 1, limit = 20 } = req.query;
+    
+    let filter = { doctorId: req.user.id };
+    if (status) filter.status = status;
+    if (date) {
+      const startDate = new Date(date);
+      const endDate = new Date(date);
+      endDate.setDate(endDate.getDate() + 1);
+      filter.date = { $gte: startDate, $lt: endDate };
+    }
+    
+    const skip = (page - 1) * limit;
+    
+    const appointments = await Appointment.find(filter)
+      .populate('patientId', 'fullName email age gender phoneNumber')
+      .sort({ date: -1, timeSlot: 1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+    
+    const total = await Appointment.countDocuments(filter);
+    
+    res.json({ 
+      success: true, 
+      data: appointments,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(total / limit),
+        totalItems: total,
+        itemsPerPage: parseInt(limit)
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * @desc    Update appointment status (confirm, complete, cancel)
+ * @route   PUT /api/doctors/appointments/:id/status
+ * @access  Private (Doctor only)
+ */
+export const updateAppointmentStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    
+    const appointment = await Appointment.findOneAndUpdate(
+      { _id: id, doctorId: req.user.id },
+      { status },
+      { new: true }
+    ).populate('patientId', 'fullName email');
+    
+    if (!appointment) {
+      return res.status(404).json({ success: false, message: 'Appointment not found' });
+    }
+    
+    res.json({ success: true, data: appointment });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * @desc    Get doctor's unique patients
+ * @route   GET /api/doctors/patients
+ * @access  Private (Doctor only)
+ */
+export const getDoctorPatients = async (req, res) => {
+  try {
+    const { search, page = 1, limit = 20 } = req.query;
+    
+    // Get all appointments for this doctor
+    const appointments = await Appointment.find({ doctorId: req.user.id })
+      .populate('patientId', 'fullName email age gender phoneNumber')
+      .sort({ createdAt: -1 });
+    
+    // Get unique patients
+    const patientMap = new Map();
+    appointments.forEach(apt => {
+      if (apt.patientId && !patientMap.has(apt.patientId._id.toString())) {
+        patientMap.set(apt.patientId._id.toString(), apt.patientId);
+      }
+    });
+    
+    let patients = Array.from(patientMap.values());
+    
+    // Filter by search
+    if (search) {
+      patients = patients.filter(p => 
+        p.fullName?.toLowerCase().includes(search.toLowerCase()) ||
+        p.email?.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+    
+    // Pagination
+    const start = (page - 1) * limit;
+    const paginatedPatients = patients.slice(start, start + limit);
+    
+    res.json({ 
+      success: true, 
+      data: paginatedPatients,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(patients.length / limit),
+        totalItems: patients.length,
+        itemsPerPage: parseInt(limit)
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * @desc    Get doctor stats (for dashboard overview)
+ * @route   GET /api/doctors/stats
+ * @access  Private (Doctor only)
+ */
+export const getDoctorStats = async (req, res) => {
+  try {
+    const doctorId = req.user.id;
+    
+    // Get all appointments
+    const appointments = await Appointment.find({ doctorId });
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const todayAppointments = appointments.filter(apt => 
+      new Date(apt.date) >= today && new Date(apt.date) < tomorrow
+    );
+    
+    const completedAppointments = appointments.filter(apt => apt.status === 'completed');
+    const upcomingAppointments = appointments.filter(apt => apt.status === 'confirmed' && new Date(apt.date) > new Date());
+    
+    // Calculate total earnings from completed appointments
+    const payments = await Payment.find({ 
+      doctorId, 
+      status: 'success' 
+    });
+    const totalEarnings = payments.reduce((sum, p) => sum + p.amount, 0);
+    
+    // Unique patients count
+    const uniquePatients = new Set(appointments.map(apt => apt.patientId?.toString())).size;
+    
+    res.json({
+      success: true,
+      data: {
+        todayAppointments: todayAppointments.length,
+        totalAppointments: appointments.length,
+        completedAppointments: completedAppointments.length,
+        upcomingAppointments: upcomingAppointments.length,
+        totalPatients: uniquePatients,
+        totalEarnings,
+        recentAppointments: appointments.slice(0, 5)
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * @desc    Get doctor's schedule/availability
+ * @route   GET /api/doctors/schedule
+ * @access  Private (Doctor only)
+ */
+export const getDoctorSchedule = async (req, res) => {
+  try {
+    const doctor = await Doctor.findById(req.user.id).select('availability');
+    res.json({ success: true, data: doctor?.availability || [] });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * @desc    Update doctor's schedule/availability
+ * @route   PUT /api/doctors/schedule
+ * @access  Private (Doctor only)
+ */
+export const updateDoctorSchedule = async (req, res) => {
+  try {
+    const { availability } = req.body;
+    
+    const doctor = await Doctor.findByIdAndUpdate(
+      req.user.id,
+      { availability },
+      { new: true }
+    ).select('availability');
+    
+    res.json({ success: true, data: doctor?.availability || [] });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };

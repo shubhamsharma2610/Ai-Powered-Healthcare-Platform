@@ -4,20 +4,11 @@ import User from '../models/User.js';
 
 // Middleware to verify JWT token
 export const authMiddleware = asyncHandler(async (req, res, next) => {
-  // ✅ Step 1: Try to get token from cookie FIRST
   let token = req.cookies?.token || req.cookies?.myToken;
   
-  // ✅ Step 2: Fallback to Authorization header
   if (!token && req.headers.authorization?.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1];
   }
-  
-  // ✅ Debug log
-  // console.log('🔐 Auth Debug:', { 
-  //   hasCookie: !!req.cookies,
-  //   hasToken: !!token,
-  //   cookieKeys: req.cookies ? Object.keys(req.cookies) : []
-  // });
 
   if (!token) {
     return res.status(401).json({
@@ -37,7 +28,6 @@ export const authMiddleware = asyncHandler(async (req, res, next) => {
     });
   }
 
-  // ✅ decoded contains { userId, role }
   const user = await User.findById(decoded.userId);
 
   if (!user) {
@@ -56,7 +46,6 @@ export const authMiddleware = asyncHandler(async (req, res, next) => {
     });
   }
 
-  // Attach user info to request
   req.user = user;
   req.userId = decoded.userId;
   req.role = decoded.role;
@@ -64,25 +53,41 @@ export const authMiddleware = asyncHandler(async (req, res, next) => {
   next();
 });
 
-// Middleware to check user role
+// ✅ FIXED: Role Middleware - Case Insensitive with Error Handling
 export const roleMiddleware = (...allowedRoles) => {
   return (req, res, next) => {
-    if (!req.role || !allowedRoles.includes(req.role)) {
-      return res.status(403).json({
+    try {
+      // Ensure allowedRoles is an array
+      const allowedRolesArray = Array.isArray(allowedRoles) ? allowedRoles : [];
+      
+      // Safely convert user role to string and lowercase
+      const userRole = req.role ? String(req.role).toLowerCase() : null;
+      
+      // Safely convert allowed roles to lowercase strings
+      const allowedLower = allowedRolesArray.map(r => String(r).toLowerCase());
+      
+      if (!userRole || !allowedLower.includes(userRole)) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied. Insufficient permissions',
+          statusCode: 403,
+          requiredRole: allowedRolesArray,
+          userRole: req.role
+        });
+      }
+      next();
+    } catch (error) {
+      console.error('Role middleware error:', error);
+      return res.status(500).json({
         success: false,
-        message: 'Access denied. Insufficient permissions',
-        statusCode: 403,
-        requiredRole: allowedRoles,
-        userRole: req.role
+        message: 'Internal server error in role check'
       });
     }
-    next();
   };
 };
 
 // Middleware to allow only unauthenticated users
 export const guestMiddleware = (req, res, next) => {
-  // ✅ Check both cookie and header
   let token = req.cookies?.token || req.cookies?.myToken;
   if (!token && req.headers.authorization?.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1];

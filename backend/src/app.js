@@ -1,9 +1,12 @@
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import express from 'express';
 import authRoutes from './routes/authRoutes.js';
 import doctorRoutes from './routes/doctorRoutes.js';
 import appointmentRoutes from './routes/appointmentsRoutes.js';
 import patientRoutes from './routes/patientRoutes.js';
-import paymentRoutes from './routes/paymentRoutes.js';  
+import paymentRoutes from './routes/paymentRoutes.js'; 
+import aiRoutes from './routes/aiRoutes.js'; 
+import  {testGemini}  from './controllers/testAiController.js'; 
 import { errorHandler } from './utils/errorHandler.js';
 import cookieParser from "cookie-parser"
 import cors from 'cors';
@@ -61,6 +64,25 @@ app.use('/api/payments', paymentRoutes);
 
 app.use('/api/patients', patientRoutes);
 
+app.use('/api/ai', aiRoutes);
+
+
+app.get('/test', testGemini);
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+// Temporary test route - remove after testing
+app.get('/aitest', async (req, res) => {
+  try {
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    const prompt = "Say 'Hello, Gemini is working!'";
+    const result = await model.generateContent(prompt);
+    res.json({ success: true, message: result.response.text() });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 // Health Check Endpoint
 app.get('/api/health', (req, res) => {

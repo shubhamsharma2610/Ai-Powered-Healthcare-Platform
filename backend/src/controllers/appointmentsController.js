@@ -6,7 +6,7 @@ import Patient from '../models/Patient.js';
 export const bookAppointment = async (req, res) => {
   try {
     const { doctorId, date, timeSlot, symptoms, amount } = req.body;
-    const patientId = req.user.id;
+    const patientId = req.userId;
 
     const doctor = await Doctor.findById(doctorId);
     if (!doctor || !doctor.isApproved) {

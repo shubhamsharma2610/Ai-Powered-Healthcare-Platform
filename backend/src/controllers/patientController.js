@@ -1,7 +1,8 @@
 import Patient from '../models/Patient.js';
 import User from '../models/User.js';
 import Appointment from '../models/Appointment.js';
-import Payment from '../models/Payment.js';  // 👈 Add this
+import Payment from '../models/Payment.js'; 
+import Doctor from '../models/Doctor.js'; // 👈 Add this
 
 // Get patient profile
 export const getPatientProfile = async (req, res) => {

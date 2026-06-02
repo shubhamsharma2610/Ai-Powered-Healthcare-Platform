@@ -64,42 +64,42 @@ export const register = asyncHandler(async (req, res) => {
       phoneNumber: otherData.phoneNumber
     });
   } 
-  else if (role === 'doctor') {
-    const { licenseNumber, specialization, experience } = otherData;
+ else if (role === 'doctor') {
+  const { licenseNumber, specialization, experience } = otherData;
 
-    if (!licenseNumber || !specialization || experience === undefined) {
-      return res.status(400).json({
-        success: false,
-        message: 'Doctor requires license number, specialization, and experience',
-        statusCode: 400
-      });
-    }
-
-    const existingDoctor = await Doctor.findOne({ licenseNumber });
-    if (existingDoctor) {
-      return res.status(400).json({
-        success: false,
-        message: 'License number already registered',
-        statusCode: 400
-      });
-    }
-
-    newUser = new Doctor({
-      fullName: fullName.trim(),
-      email: email.toLowerCase(),
-      password,
-      role: 'doctor',
-      licenseNumber: licenseNumber.trim(),
-      specialization,
-      experience: parseInt(experience),
-      phoneNumber: otherData.phoneNumber,
-      bio: otherData.bio,
-      clinicAddress: otherData.clinicAddress,
-      consultationFee: otherData.consultationFee,
-      qualifications: otherData.qualifications || [],
-      isApproved: true
+  if (!licenseNumber || !specialization || experience === undefined) {
+    return res.status(400).json({
+      success: false,
+      message: 'Doctor requires license number, specialization, and experience',
+      statusCode: 400
     });
-  } 
+  }
+
+  const existingDoctor = await Doctor.findOne({ licenseNumber });
+  if (existingDoctor) {
+    return res.status(400).json({
+      success: false,
+      message: 'License number already registered',
+      statusCode: 400
+    });
+  }
+
+  // ✅ CORRECT - No 'role' field
+  newUser = new Doctor({
+    fullName: fullName.trim(),
+    email: email.toLowerCase(),
+    password,
+    licenseNumber: licenseNumber.trim(),
+    specialization,
+    experience: parseInt(experience),
+    phoneNumber: otherData.phoneNumber,
+    bio: otherData.bio,
+    clinicAddress: otherData.clinicAddress,
+    consultationFee: otherData.consultationFee,
+    qualifications: otherData.qualifications || [],
+    isApproved: true
+  });
+}
   else {
     return res.status(400).json({
       success: false,
