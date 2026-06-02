@@ -1,24 +1,35 @@
 import React from "react";
-import { useNavigate,Link } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { logout, logoutAPI } from "../../../redux/slices/authSlice";
 
 // ──────────────────────────────────────────────
-// 🔁 Navigation Items
+// 🔁 Navigation Items (Static for Patient)
 // ──────────────────────────────────────────────
 const navItems = [
-  // { 
-  //   id: "home", 
-  //   label: "Home", 
-  //   path: "/", 
-  //   badge: null, 
-  //   Icon: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg> 
-  // },
-  { id: "overview", label: "Overview", path: null, badge: null, Icon: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> },
-  { id: "appointments", label: "Appointments", path: null, badge: "3", Icon: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> },
-  { id: "transactions", label: "Transactions", path: null, badge: null, Icon: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> },
-  { id: "profile", label: "Profile", path: null, badge: null, Icon: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> },
+  { id: "overview", label: "Overview", Icon: () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+      <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+    </svg>
+  ) },
+  { id: "appointments", label: "Appointments", Icon: () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+      <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+    </svg>
+  ) },
+  { id: "transactions", label: "Transactions", Icon: () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+    </svg>
+  ) },
+  { id: "profile", label: "Profile", Icon: () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+    </svg>
+  ) },
 ];
-
-const patientProfile = { name: "Rahul Sharma", avatar: "RS", role: "Patient" };
 
 const Ico = {
   Logo: () => (
@@ -39,16 +50,25 @@ const Ico = {
 };
 
 // ──────────────────────────────────────────────
-// SidebarContent (Inner logic)
+// SidebarContent (Inner logic - No navigation)
 // ──────────────────────────────────────────────
 function SidebarContent({ active, setActive, onClose }) {
-  const navigate = useNavigate();
-  const { name, avatar, role } = patientProfile;
+  const dispatch = useDispatch();
+  const { user, role } = useSelector((state) => state.auth);
+  
+  const avatar = user?.fullName?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
+  const name = user?.fullName || 'User';
+  const userRole = role || 'patient';
 
-  const handleNavClick = (id, path) => {
-    if (path) navigate(path);
-    if (setActive) setActive(id);
-    if (onClose) onClose(); // Mobile menu band karne ke liye
+  const handleNavClick = (id) => {
+    setActive(id);  // ✅ Only update active state, no navigation
+    if (onClose) onClose();
+  };
+
+  const handleLogout = async () => {
+    await dispatch(logoutAPI());
+    dispatch(logout());
+    if (onClose) onClose();
   };
 
   return (
@@ -56,21 +76,17 @@ function SidebarContent({ active, setActive, onClose }) {
       
       {/* Logo Section */}
       <div className="flex items-center justify-between px-6 py-5 border-b border-gray-50 shrink-0">
-         <Link to="/">
-        <div className="flex items-center gap-3">
-        
+        <Link to="/" className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-primary text-white shadow-lg shadow-primary/20">
             <Ico.Logo />
           </div>
-      
           <div>
             <h1 className="font-display text-lg font-black text-gray-800 leading-none">
               Medi<span className="text-primary">AI</span>
             </h1>
             <p className="text-[9px] font-bold tracking-widest text-gray-400 uppercase mt-1">Smart Health</p>
           </div>
-        </div>
-           </Link>
+        </Link>
         
         {/* Mobile Close Button */}
         {onClose && (
@@ -86,9 +102,9 @@ function SidebarContent({ active, setActive, onClose }) {
           <div className="w-10 h-10 rounded-full flex items-center justify-center bg-primary text-white text-xs font-bold shadow-sm">
             {avatar}
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="text-sm font-bold text-gray-800 truncate">{name}</div>
-            <div className="text-[10px] font-medium text-gray-500 uppercase tracking-tighter">{role}</div>
+            <div className="text-[10px] font-medium text-gray-500 uppercase tracking-tighter capitalize">{userRole}</div>
           </div>
         </div>
       </div>
@@ -96,12 +112,12 @@ function SidebarContent({ active, setActive, onClose }) {
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 space-y-1 custom-scrollbar">
         <p className="px-4 py-2 text-[10px] font-bold tracking-widest text-gray-400 uppercase">Main Menu</p>
-        {navItems.map(({ id, label, Icon, path, badge }) => {
+        {navItems.map(({ id, label, Icon }) => {
           const isActive = active === id;
           return (
             <button
               key={id}
-              onClick={() => handleNavClick(id, path)}
+              onClick={() => handleNavClick(id)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200
                 ${isActive 
                   ? "bg-primary text-white shadow-md shadow-primary/20 translate-x-1" 
@@ -111,11 +127,6 @@ function SidebarContent({ active, setActive, onClose }) {
                 <Icon />
               </span>
               <span className="flex-1 text-left">{label}</span>
-              {badge && (
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg ${isActive ? "bg-white/20 text-white" : "bg-primary/10 text-primary"}`}>
-                  {badge}
-                </span>
-              )}
             </button>
           );
         })}
@@ -124,12 +135,18 @@ function SidebarContent({ active, setActive, onClose }) {
       {/* Logout */}
       <div className="p-4 border-t border-gray-50">
         <button
-          onClick={() => navigate("/login")}
+          onClick={handleLogout}
           className="flex items-center gap-3 w-full p-3 rounded-xl text-sm font-bold text-red-500 hover:bg-red-50 transition-all active:scale-95"
         >
           <Ico.Logout /> Logout
         </button>
       </div>
+
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+      `}</style>
     </aside>
   );
 }
@@ -167,8 +184,6 @@ export default function Sidebar({ active, setActive, onClose, mobileOpen }) {
           to { transform: translateX(0); }
         }
         .animate-slide-in { animation: slide-in 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #f1f1f1; border-radius: 10px; }
       `}</style>
     </>
   );

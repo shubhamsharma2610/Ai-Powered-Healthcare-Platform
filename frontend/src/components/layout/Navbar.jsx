@@ -68,7 +68,7 @@ const Navbar = () => {
     if (role === 'patient') {
       return [
         { to: '/patient/dashboard', label: 'Dashboard', icon: LayoutDashboard }
-        // { to: '/patient/appointments', label: 'My Appointments', icon: Calendar },  // ✅ Uncommented
+        // { to: '/patient/appointments', label: 'My Appointments', icon: Calendar },
         // { to: '/patient/profile', label: 'Profile', icon: User },
       ];
     }
@@ -95,6 +95,14 @@ const Navbar = () => {
   };
 
   const dashboardLinks = getDashboardLinks();
+
+  // ✅ Get the correct dashboard URL for the role
+  const getDashboardUrl = () => {
+    if (role === 'patient') return '/patient/dashboard';
+    if (role === 'Doctor') return '/doctor/dashboard';
+    if (role === 'admin') return '/admin';
+    return '/';
+  };
 
   return (
     <nav
@@ -145,7 +153,7 @@ const Navbar = () => {
               );
             })}
 
-            {/* ✅ Fixed: /find-doctors (plural) */}
+            {/* Find Doctors Link */}
             {(!isAuthenticated || role === 'patient') && (
               <Link
                 to="/find-doctors"
@@ -195,7 +203,18 @@ const Navbar = () => {
                       </span>
                     </div>
 
-                    {dashboardLinks.map((link) => (
+                    {/* ✅ Dashboard Link - Always show for all roles */}
+                    <Link
+                      to={getDashboardUrl()}
+                      onClick={() => setIsProfileOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-primary-light hover:text-primary transition-colors"
+                    >
+                      <LayoutDashboard size={17} />
+                      Dashboard
+                    </Link>
+
+                    {/* ✅ Role-specific links */}
+                    {dashboardLinks.slice(1).map((link) => (
                       <Link
                         key={link.to}
                         to={link.to}
@@ -245,7 +264,6 @@ const Navbar = () => {
             </Link>
           ))}
 
-          {/* ✅ Fixed: /find-doctors */}
           {(!isAuthenticated || role === 'patient') && (
             <Link
               to="/find-doctors"
@@ -276,7 +294,16 @@ const Navbar = () => {
                 </span>
               </div>
 
-              {dashboardLinks.map((link) => (
+              <Link
+                to={getDashboardUrl()}
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-700 hover:bg-primary-light hover:text-primary transition-colors"
+              >
+                <LayoutDashboard size={17} />
+                Dashboard
+              </Link>
+
+              {dashboardLinks.slice(1).map((link) => (
                 <Link
                   key={link.to}
                   to={link.to}

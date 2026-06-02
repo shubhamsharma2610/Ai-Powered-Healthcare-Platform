@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";  
 
 import { useEffect, useRef, useState } from "react";
 
@@ -132,7 +133,7 @@ const steps = [
           }`}
           style={{ transitionDelay: "500ms" }}
         >
-          <button
+          <Link to="/ai-upload-report"
             className="group inline-flex items-center gap-2 px-7 py-3 rounded-full text-white font-semibold text-sm transition-all duration-300 hover:scale-105 active:scale-95"
             style={{ background: "hsl(182,100%,37%)" }}
           >
@@ -146,7 +147,7 @@ const steps = [
             >
               <path d="M3 8h10M9 4l4 4-4 4" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-          </button>
+          </Link>
         </div>
 
       </div>

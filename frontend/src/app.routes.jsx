@@ -12,16 +12,22 @@ import Register from './features/auth/pages/Register';
 import AiUploadReport from './features/ai-assistant/pages/AiUploadReport.jsx';
 import AIResultPage from './features/ai-assistant/pages/AiResultReport.jsx';
 import Services from './features/services/pages/Services';
+import AboutUsPage from './features/About-us/pages/AboutUsPage.jsx';
+
+// Patient Pages
+import PatientDashboard from './features/patient/pages/PatientDashboard';
+import EditProfile from './features/patient/pages/EditProfile';
+import PatientProfileSetup from './features/patient/pages/PatientProfileSetup';
 
 // ✅ Fixed: Import FindDoctorsPage from correct location
 import FindDoctorsPage from './features/find-doctors/pages/FindDoctorsPage.jsx';
 import DoctorProfilePage from './features/find-doctors/pages/DoctorProfilePage.jsx';
 import BookingPage from './features/find-doctors/pages/BookingPage.jsx';
 
-// Patient Pages
-import PatientDashboard from './features/patient/pages/PatientDashboard';
-import EditProfile from './features/patient/pages/EditProfile';
-import PatientProfileSetup from './features/patient/pages/PatientProfileSetup';
+// // Patient Pages
+// import PatientDashboard from './features/patient/pages/PatientDashboard';
+// import EditProfile from './features/patient/pages/EditProfile';
+// import PatientProfileSetup from './features/patient/pages/PatientProfileSetup';
 
 // Doctor Pages
 import DoctorDashboard from './features/doctor/pages/DoctorDashboard';
@@ -73,6 +79,7 @@ const AppRoutes = () => {
       <Route element={<MainLayout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/services" element={<Services />} />
+         <Route path="/about-us" element={<AboutUsPage />} />
         
         {/* ✅ Fixed: Find Doctors Routes */}
         <Route path="/find-doctors" element={<FindDoctorsPage />} />

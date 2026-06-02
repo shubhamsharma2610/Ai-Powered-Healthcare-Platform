@@ -1,25 +1,24 @@
-// src/features/doctor/pages/DoctorDashboard.jsx
 import React, { useState } from "react";
-import Sidebar from "../components/DoctorSidebar";
-import Topbar from "../components/Topbar";
-import OverviewSection from "../components/OverviewSection";
-import AppointmentsSection from "../components/AppointmentsSection";
-import PatientsSection from "../components/PatientsSection";
-import ScheduleSection from "../components/ScheduleSection";
-import ProfileSection from "../components/ProfileSection";
-import Profile from "../components/ProfileSection";
+import DoctorSidebar from "../components/DoctorSidebar";
+import DoctorTopbar from "../components/DoctorTopbar";
+import DoctorOverviewSection from "../components/DoctorOverviewSection";
+import DoctorAppointmentsSection from "../components/DoctorAppointmentsSection";
+import DoctorPatientsSection from "../components/DoctorPatientsSection";
+import DoctorScheduleSection from "../components/DoctorScheduleSection";
+import DoctorProfileSection from "../components/DoctorProfileSection";
+
 export default function DoctorDashboard() {
   const [active, setActive] = useState("overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const renderContent = () => {
     switch (active) {
-      case "overview":      return <OverviewSection />;
-      case "appointments":  return <AppointmentsSection />;
-      case "patients":      return <PatientsSection />;
-      case "schedule":      return <ScheduleSection />;
-      case "profile":       return <Profile/>
-      default:              return <OverviewSection />;
+      case "overview":      return <DoctorOverviewSection />;
+      case "appointments":  return <DoctorAppointmentsSection />;
+      case "patients":      return <DoctorPatientsSection />;
+      case "schedule":      return <DoctorScheduleSection />;
+      case "profile":       return <DoctorProfileSection />;
+      default:              return <DoctorOverviewSection />;
     }
   };
 
@@ -27,7 +26,7 @@ export default function DoctorDashboard() {
     <div className="flex h-screen overflow-hidden bg-[#f8fafc]" style={{ fontFamily: "'Inter', sans-serif" }}>
       
       {/* SIDEBAR */}
-      <Sidebar 
+      <DoctorSidebar 
         active={active} 
         setActive={setActive} 
         mobileOpen={sidebarOpen} 
@@ -38,7 +37,7 @@ export default function DoctorDashboard() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative lg:pl-64">
         
         {/* TOPBAR */}
-        <Topbar 
+        <DoctorTopbar 
           active={active} 
           setActive={setActive}
           onMenuClick={() => setSidebarOpen(true)} 

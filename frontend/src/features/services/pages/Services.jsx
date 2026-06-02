@@ -1,106 +1,138 @@
-import React from 'react'
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { 
+  Brain, 
+  Stethoscope, 
+  Calendar, 
+  BarChart3, 
+  PhoneCall, 
+  BookOpen,
+  ArrowRight 
+} from 'lucide-react';
 
-// import './index.css'
-
-
-// import AppRoutes from './app.routes.jsx'
 function Services() {
-  // const [count, setCount] = useState(0)
+  const services = [
+    {
+      icon: Brain,
+      title: "AI Health Assistant",
+      description: "Get instant AI-powered analysis of your medical reports with personalized doctor recommendations.",
+      color: "primary"
+    },
+    {
+      icon: Stethoscope,
+      title: "Find Doctors",
+      description: "Connect with qualified healthcare professionals in your area based on specialty and availability.",
+      color: "blue"
+    },
+    {
+      icon: Calendar,
+      title: "Appointment Booking",
+      description: "Schedule appointments with doctors easily through our streamlined booking system.",
+      color: "purple"
+    },
+    {
+      icon: BarChart3,
+      title: "Health Analytics",
+      description: "Track your health metrics and get insights into your wellness journey with detailed analytics.",
+      color: "orange"
+    },
+    {
+      icon: PhoneCall,
+      title: "Emergency Support",
+      description: "24/7 emergency healthcare support and immediate assistance when you need it most.",
+      color: "red"
+    },
+    {
+      icon: BookOpen,
+      title: "Health Education",
+      description: "Access comprehensive health education resources and learn about preventive healthcare.",
+      color: "green"
+    }
+  ];
+
+  const getColorClasses = (color) => {
+    switch(color) {
+      case 'primary':
+        return { bg: 'bg-primary/10', text: 'text-primary', hover: 'hover:border-primary/30' };
+      case 'blue':
+        return { bg: 'bg-blue-50', text: 'text-blue-600', hover: 'hover:border-blue-200' };
+      case 'purple':
+        return { bg: 'bg-purple-50', text: 'text-purple-600', hover: 'hover:border-purple-200' };
+      case 'orange':
+        return { bg: 'bg-orange-50', text: 'text-orange-600', hover: 'hover:border-orange-200' };
+      case 'red':
+        return { bg: 'bg-red-50', text: 'text-red-600', hover: 'hover:border-red-200' };
+      case 'green':
+        return { bg: 'bg-green-50', text: 'text-green-600', hover: 'hover:border-green-200' };
+      default:
+        return { bg: 'bg-primary/10', text: 'text-primary', hover: 'hover:border-primary/30' };
+    }
+  };
 
   return (
- 
-<div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 max-w-7xl mx-auto px-4 py-8">
-      <div className="text-center mb-12">
-        <h1 className="text-4xl lg:text-5xl font-bold text-gray-800 mb-4 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-          Our Services
-        </h1>
-        <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-          Comprehensive healthcare solutions tailored for your needs
-        </p>
-      </div>
-
-      {/* Services Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {/* Service 1 */}
-        <div className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100">
-          <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4">
-            <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-            </svg>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        {/* Header */}
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-1.5 rounded-full mb-4">
+            <span className="text-primary">✨</span>
+            <span className="text-xs font-semibold text-primary uppercase tracking-wide">What We Offer</span>
           </div>
-          <h3 className="text-xl font-bold text-gray-800 mb-2">AI Health Assistant</h3>
-          <p className="text-gray-600 text-sm leading-relaxed">
-            Get instant AI-powered analysis of your medical reports with personalized doctor recommendations.
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
+            Our <span className="text-primary">Services</span>
+          </h1>
+          <p className="text-gray-500 text-base max-w-2xl mx-auto">
+            Comprehensive healthcare solutions tailored for your needs
           </p>
         </div>
 
-        {/* Service 2 */}
-        <div className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100">
-          <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-4">
-            <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-          </div>
-          <h3 className="text-xl font-bold text-gray-800 mb-2">Find Doctors</h3>
-          <p className="text-gray-600 text-sm leading-relaxed">
-            Connect with qualified healthcare professionals in your area based on specialty and availability.
-          </p>
+        {/* Services Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {services.map((service, index) => {
+            const Icon = service.icon;
+            const colors = getColorClasses(service.color);
+            return (
+              <div 
+                key={index}
+                className={`group bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 hover:-translate-y-1 ${colors.hover}`}
+              >
+                <div className={`w-12 h-12 rounded-xl ${colors.bg} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
+                  <Icon size={22} className={colors.text} />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-2">{service.title}</h3>
+                <p className="text-sm text-gray-500 leading-relaxed">{service.description}</p>
+              </div>
+            );
+          })}
         </div>
 
-        {/* Service 3 */}
-        <div className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100">
-          <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-4">
-            <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 4v10m0 0l-2-2m2 2l2-2m6-6v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6a2 2 0 012-2h8a2 2 0 012 2z" />
-            </svg>
+        {/* CTA Section */}
+        <div className="mt-16 text-center">
+          <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
+            <h2 className="text-xl font-bold text-gray-800 mb-3">Ready to Get Started?</h2>
+            <p className="text-gray-500 text-sm mb-5">
+              Join thousands of happy patients using HealthSync
+            </p>
+            <div className="flex flex-wrap gap-3 justify-center">
+              <Link 
+                to="/find-doctors" 
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors"
+              >
+                Find a Doctor <ArrowRight size={16} />
+              </Link>
+              <Link 
+                to="/signup" 
+                className="inline-flex items-center gap-2 px-5 py-2.5 border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+              >
+                Create Account
+              </Link>
+            </div>
           </div>
-          <h3 className="text-xl font-bold text-gray-800 mb-2">Appointment Booking</h3>
-          <p className="text-gray-600 text-sm leading-relaxed">
-            Schedule appointments with doctors easily through our streamlined booking system.
-          </p>
-        </div>
-
-        {/* Service 4 */}
-        <div className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100">
-          <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center mb-4">
-            <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-          </div>
-          <h3 className="text-xl font-bold text-gray-800 mb-2">Health Analytics</h3>
-          <p className="text-gray-600 text-sm leading-relaxed">
-            Track your health metrics and get insights into your wellness journey with detailed analytics.
-          </p>
-        </div>
-
-        {/* Service 5 */}
-        <div className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100">
-          <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-4">
-            <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
-            </svg>
-          </div>
-          <h3 className="text-xl font-bold text-gray-800 mb-2">Emergency Support</h3>
-          <p className="text-gray-600 text-sm leading-relaxed">
-            24/7 emergency healthcare support and immediate assistance when you need it most.
-          </p>
-        </div>
-
-        {/* Service 6 */}
-        <div className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100">
-          <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mb-4">
-            <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-            </svg>
-          </div>
-          <h3 className="text-xl font-bold text-gray-800 mb-2">Health Education</h3>
-          <p className="text-gray-600 text-sm leading-relaxed">
-            Access comprehensive health education resources and learn about preventive healthcare.
-          </p>
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default Services
+export default Services;

@@ -1,10 +1,31 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Bot, ArrowRight, Sparkles, ShieldCheck, Cpu, Search, Activity } from 'lucide-react';
 
 const HeroSection = () => {
   const navigate = useNavigate();
+  const [isVisible, setIsVisible] = useState(false);
+  const sectionRef = useRef(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsVisible(entry.isIntersecting);
+      },
+      { threshold: 0.1 }
+    );
+
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current);
+    }
+
+    return () => {
+      if (sectionRef.current) {
+        observer.unobserve(sectionRef.current);
+      }
+    };
+  }, []);
 
   const fadeInUp = {
     initial: { opacity: 0, y: 24 },
@@ -13,13 +34,13 @@ const HeroSection = () => {
   };
 
   return (
-    <section className="relative min-h-screen bg-gray-100  pb-6 md:pt-10 md:pb-24 overflow-hidden flex items-center">
+    <section className="relative min-h-screen bg-gray-100  pb-6 md:pt-10 md:pb-24 overflow-hidden flex items-center" ref={sectionRef}>
 
       {/* Background blobs */}
       <div className="absolute inset-0 -z-10 pointer-events-none">
-        <div className="absolute top-[-8%] right-[-8%] w-[280px] h-[280px] sm:w-[420px] sm:h-[420px] md:w-[560px] md:h-[560px] rounded-full bg-[hsl(182,100%,37%)]/10 blur-[120px]" />
-        <div className="absolute bottom-[5%] left-[-4%] w-[200px] h-[200px] sm:w-[280px] sm:h-[280px] rounded-full bg-[#2a6f7c]/8 blur-[90px]" />
-        <div className="absolute top-[40%] left-[30%] w-[160px] h-[160px] rounded-full bg-[hsl(182,100%,37%)]/5 blur-[60px]" />
+        <div className="absolute top-[-8%] right-[-8%] w-[280px] h-[280px] sm:w-[420px] sm:h-[420px] md:w-[560px] md:h-[560px] rounded-full bg-[hsl(182,100%,37%)]/10 blur-[80px]" />
+        <div className="absolute bottom-[5%] left-[-4%] w-[200px] h-[200px] sm:w-[280px] sm:h-[280px] rounded-full bg-[#2a6f7c]/8 blur-[60px]" />
+        <div className="absolute top-[40%] left-[30%] w-[160px] h-[160px] rounded-full bg-[hsl(182,100%,37%)]/5 blur-[50px]" />
         {/* Subtle grid */}
         <div
           className="absolute inset-0 opacity-[0.025]"
@@ -161,8 +182,8 @@ const HeroSection = () => {
 
             {/* Floating card — top left: AI Status */}
             <motion.div
-              animate={{ y: [0, -10, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+              animate={isVisible ? { y: [0, -10, 0] } : { y: 0 }}
+              transition={{ duration: 4, repeat: isVisible ? Infinity : 0, ease: "easeInOut" }}
               className="absolute top-6 -left-4 sm:-left-8 bg-white/95 backdrop-blur-sm p-3.5 rounded-2xl shadow-xl border border-gray-100 flex items-center gap-3 w-48 sm:w-52"
             >
               <div
@@ -181,8 +202,8 @@ const HeroSection = () => {
 
             {/* Floating card — bottom right: Secure */}
             <motion.div
-              animate={{ y: [0, 10, 0] }}
-              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+              animate={isVisible ? { y: [0, 10, 0] } : { y: 0 }}
+              transition={{ duration: 5, repeat: isVisible ? Infinity : 0, ease: "easeInOut", delay: 0.5 }}
               className="absolute bottom-6 right-2 sm:-right-4 bg-white p-3 rounded-xl shadow-lg border border-gray-100 flex items-center gap-2.5"
             >
               <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center text-green-500 shrink-0">
@@ -193,8 +214,8 @@ const HeroSection = () => {
 
             {/* Floating card — mid left: Live pulse */}
             <motion.div
-              animate={{ y: [0, -7, 0] }}
-              transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+              animate={isVisible ? { y: [0, -7, 0] } : { y: 0 }}
+              transition={{ duration: 3.5, repeat: isVisible ? Infinity : 0, ease: "easeInOut", delay: 1 }}
               className="absolute top-[42%] -left-4 sm:-left-10 bg-white p-3 rounded-xl shadow-lg border border-gray-100 flex items-center gap-2.5"
             >
               <div

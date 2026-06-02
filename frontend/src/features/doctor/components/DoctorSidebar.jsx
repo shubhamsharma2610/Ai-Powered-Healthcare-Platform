@@ -1,9 +1,18 @@
-// src/features/doctor/components/Sidebar.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { logout, logoutAPI } from "../../../redux/slices/authSlice";
 
 export default function DoctorSidebar({ active, setActive, mobileOpen, onClose }) {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { user } = useSelector((state) => state.auth);
+  
+  // Get doctor details from user object
+  const doctorName = user?.fullName || 'Dr. Rahul Sharma';
+  const doctorSpecialty = user?.specialization || 'Cardiologist';
+  const doctorInitial = doctorName.split(' ').map(n => n[0]).join('') || 'DR';
+
   const menuItems = [
     { id: "overview", name: "Overview", icon: "📊" },
     { id: "appointments", name: "Appointments", icon: "📅" },
@@ -11,6 +20,13 @@ export default function DoctorSidebar({ active, setActive, mobileOpen, onClose }
     { id: "schedule", name: "Schedule", icon: "⏰" },
     { id: "profile", name: "Profile", icon: "👨‍⚕️" },
   ];
+
+  const handleLogout = async () => {
+    await dispatch(logoutAPI());
+    dispatch(logout());
+    navigate("/login");
+    if (mobileOpen && onClose) onClose();
+  };
 
   const sidebarContent = (
     <div className="h-full flex flex-col bg-white border-r border-gray-200">
@@ -44,13 +60,13 @@ export default function DoctorSidebar({ active, setActive, mobileOpen, onClose }
       </div>
 
       {/* Menu Items */}
-      <nav className="flex-1 p-4 space-y-1">
+      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         {menuItems.map((item) => (
           <button
             key={item.id}
             onClick={() => {
               setActive(item.id);
-              if (mobileOpen) onClose();
+              if (mobileOpen && onClose) onClose();
             }}
             className={`
               w-full flex items-center gap-3 px-4 py-3 rounded-xl
@@ -77,22 +93,32 @@ export default function DoctorSidebar({ active, setActive, mobileOpen, onClose }
         ))}
       </nav>
 
-      {/* Footer */}
-      <div className="p-4 border-t border-gray-100">
+      {/* Footer - Doctor Info + Logout */}
+      <div className="p-4 border-t border-gray-100 space-y-3">
+        {/* Doctor Profile Card */}
         <div className="bg-gray-50 rounded-xl p-3">
           <div className="flex items-center gap-2">
             <div
-              className="w-8 h-8 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: 'hsl(182, 100%, 95%)' }}
+              className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
+              style={{ backgroundColor: 'hsl(182, 100%, 95%)', color: 'hsl(182, 100%, 37%)' }}
             >
-              👨‍⚕️
+              {doctorInitial}
             </div>
-            <div className="flex-1">
-              <p className="text-xs font-medium text-gray-900">Dr. Rahul Sharma</p>
-              <p className="text-xs text-gray-500">Cardiologist</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-gray-900 truncate">{doctorName}</p>
+              <p className="text-xs text-gray-500 truncate capitalize">{doctorSpecialty}</p>
             </div>
           </div>
         </div>
+
+        {/* Logout Button */}
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-3 w-full px-3 py-2 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition-all duration-200"
+        >
+          <span className="text-lg">🚪</span>
+          Logout
+        </button>
       </div>
     </div>
   );
@@ -113,6 +139,14 @@ export default function DoctorSidebar({ active, setActive, mobileOpen, onClose }
           </div>
         </div>
       )}
+
+      <style>{`
+        @keyframes slide-in {
+          from { transform: translateX(-100%); }
+          to { transform: translateX(0); }
+        }
+        .animate-slide-in { animation: slide-in 0.3s ease-out; }
+      `}</style>
     </>
   );
 }

@@ -1,14 +1,21 @@
 import React, { useState } from "react";
 import { Menu, User, LogOut, UserCircle, ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router";
-// import ProfileSection from "./ProfileSection";
-export default function Topbar({setActive, active, onMenuClick }) {
+import { useDispatch, useSelector } from "react-redux";
+import { logout, logoutAPI } from "../../../redux/slices/authSlice";
+
+export default function DoctorTopbar({ setActive, active, onMenuClick }) {
   const [showDropdown, setShowDropdown] = useState(false);
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  
+  // Get doctor data from Redux
+  const { user } = useSelector((state) => state.auth);
+  
+  const doctorName = user?.fullName || 'Dr. Sarah Wilson';
+  const doctorSpecialty = user?.specialization || 'Cardiologist';
+  const doctorInitial = doctorName.split(' ').map(n => n[0]).join('') || 'DW';
 
-
-  function profilefun(){
-setActive("profile")
-  }
   // Page titles
   const getPageTitle = () => {
     const titles = {
@@ -21,11 +28,17 @@ setActive("profile")
     return titles[active] || "Dashboard";
   };
 
-  const navigate=useNavigate()
+  const handleProfileClick = () => {
+    setActive("profile");
+    setShowDropdown(false);
+  };
 
-  function logout(){
-    navigate("/login")
-  }
+  const handleLogout = async () => {
+    await dispatch(logoutAPI());
+    dispatch(logout());
+    navigate("/login");
+    setShowDropdown(false);
+  };
 
   return (
     <header className="bg-white border-b border-gray-100 px-4 lg:px-6 py-3 sticky top-0 z-20">
@@ -53,12 +66,12 @@ setActive("profile")
             onClick={() => setShowDropdown(!showDropdown)}
             className="flex items-center gap-2 px-2 py-1.5 rounded-medical hover:bg-gray-50 transition-all"
           >
-            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-              <User className="w-4 h-4 text-white" />
+            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-sm font-bold">
+              {doctorInitial}
             </div>
             <div className="hidden sm:block text-left">
-              <p className="text-sm font-medium text-gray-900">Dr. Sarah Wilson</p>
-              <p className="text-xs text-gray-500">Cardiologist</p>
+              <p className="text-sm font-medium text-gray-900">{doctorName}</p>
+              <p className="text-xs text-gray-500 capitalize">{doctorSpecialty}</p>
             </div>
             <ChevronDown className="w-4 h-4 text-gray-400" />
           </button>
@@ -71,11 +84,17 @@ setActive("profile")
                 onClick={() => setShowDropdown(false)}
               />
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-medical shadow-lg border border-gray-100 z-50 overflow-hidden">
-                <button onClick={profilefun} className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-3">
+                <button 
+                  onClick={handleProfileClick} 
+                  className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-3"
+                >
                   <UserCircle className="w-4 h-4" />
                   My Profile
                 </button>
-                <button onClick={logout} className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-3 border-t border-gray-100">
+                <button 
+                  onClick={handleLogout} 
+                  className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-3 border-t border-gray-100"
+                >
                   <LogOut className="w-4 h-4" />
                   Logout
                 </button>

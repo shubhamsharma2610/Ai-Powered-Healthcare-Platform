@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import { Upload, FileText, Zap, Utensils, Stethoscope, X, Loader2, Shield, Sparkles } from "lucide-react";
+import { analyzeReport } from "../services/aiApi";
 
 export default function MedicalReportAnalyzer() {
   const [file, setFile] = useState(null);
@@ -34,13 +35,34 @@ export default function MedicalReportAnalyzer() {
     if (droppedFile) validateAndSet(droppedFile);
   };
 
-  const handleGenerate = () => {
+  // ✅ Updated: Call real backend API
+  const handleGenerate = async () => {
     if (!file) return;
+    
     setLoading(true);
-    setTimeout(() => {
-      navigate("/ai-result-upload");
+    setError(null);
+    
+    try {
+      const response = await analyzeReport(file);
+      
+      if (response.success) {
+        // Navigate to result page with analysis data
+        navigate("/ai-result-upload", { 
+          state: { 
+            result: response.data,
+            fileName: file.name,
+            fileSize: (file.size / 1024 / 1024).toFixed(1)
+          } 
+        });
+      } else {
+        setError(response.message || "Analysis failed");
+      }
+    } catch (err) {
+      console.error("Analysis error:", err);
+      setError(err.response?.data?.message || "Failed to analyze report. Please try again.");
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
   };
 
   const features = [
@@ -138,7 +160,7 @@ export default function MedicalReportAnalyzer() {
               {loading ? (
                 <>
                   <Loader2 size={18} className="animate-spin" />
-                  Analyzing...
+                  Analyzing your report...
                 </>
               ) : (
                 <>

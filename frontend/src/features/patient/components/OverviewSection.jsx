@@ -18,7 +18,8 @@ export default function OverviewSection() {
     return <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-2 border-primary"></div></div>;
   }
 
-  const upcomingAppointments = appointments?.filter(apt => apt.status !== 'completed') || [];
+  // Only appointments that are pending or confirmed should count as upcoming
+  const upcomingAppointments = appointments?.filter(apt => apt.status === 'pending' || apt.status === 'confirmed') || [];
   const totalSpent = summary?.totalSpent || 0;
 
   return (
@@ -90,7 +91,7 @@ export default function OverviewSection() {
             {appointments?.slice(0, 3).map((apt) => (
               <div key={apt._id} className="flex justify-between items-center pb-2 border-b">
                 <div>
-                  <p className="font-medium">Dr. {apt.doctorId?.fullName}</p>
+                  <p className="font-medium">{apt.doctorId?.fullName}</p>
                   <p className="text-xs text-gray-500">{new Date(apt.date).toLocaleDateString()} at {apt.timeSlot}</p>
                 </div>
                 <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 capitalize">{apt.status}</span>
