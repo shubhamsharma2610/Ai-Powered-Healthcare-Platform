@@ -3,7 +3,8 @@ import crypto from 'crypto';
 import Payment from '../models/Payment.js';
 import Appointment from '../models/Appointment.js';
 import Patient from '../models/Patient.js';
-import Doctor from '../models/Doctor.js'; // 👈 Add this
+import Doctor from '../models/Doctor.js';
+
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_KEY_SECRET
@@ -46,11 +47,12 @@ export const createPaymentOrder = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Create payment order error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// Verify payment
+// ✅ UPDATED: Verify payment with proper status updates
 export const verifyPayment = async (req, res) => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, appointmentId } = req.body;
@@ -65,6 +67,7 @@ export const verifyPayment = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid signature' });
     }
 
+    // ✅ Update payment as success
     await Payment.findOneAndUpdate(
       { razorpayOrderId: razorpay_order_id },
       {
@@ -74,12 +77,62 @@ export const verifyPayment = async (req, res) => {
       }
     );
 
-    await Appointment.findByIdAndUpdate(appointmentId, {
-      paymentStatus: 'paid',
-      status: 'confirmed'
-    });
+    // ✅ CRITICAL: Update appointment to confirmed ONLY after payment success
+    const updatedAppointment = await Appointment.findByIdAndUpdate(
+      appointmentId,
+      { 
+        paymentStatus: 'paid',
+        status: 'confirmed'  // ✅ PENDING → CONFIRMED
+      },
+      { new: true }
+    );
 
-    res.json({ success: true, message: 'Payment verified successfully' });
+    // ✅ Update patient's appointment count
+    if (updatedAppointment) {
+      await Patient.findByIdAndUpdate(updatedAppointment.patientId, {
+        $inc: { appointmentCount: 1 },
+        $push: { appointments: appointmentId }
+      });
+    }
+
+    res.json({ 
+      success: true, 
+      message: 'Payment verified successfully',
+      data: { appointment: updatedAppointment }
+    });
+  } catch (error) {
+    console.error('Payment verification error:', error);
+    
+    // ✅ If verification fails, mark payment as failed
+    if (req.body.razorpay_order_id) {
+      await Payment.findOneAndUpdate(
+        { razorpayOrderId: req.body.razorpay_order_id },
+        { status: 'failed' }
+      );
+    }
+    
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ✅ NEW: Handle payment failure
+export const paymentFailed = async (req, res) => {
+  try {
+    const { razorpay_order_id, appointmentId } = req.body;
+    
+    // Mark payment as failed
+    await Payment.findOneAndUpdate(
+      { razorpayOrderId: razorpay_order_id },
+      { status: 'failed' }
+    );
+    
+    // Optionally: Mark appointment as cancelled or keep pending for retry
+    // We'll keep it pending so user can retry
+    
+    res.json({ 
+      success: true, 
+      message: 'Payment failed recorded' 
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

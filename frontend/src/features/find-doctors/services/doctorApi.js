@@ -15,16 +15,14 @@ export const getAllDoctors = async (filters = {}) => {
   if (filters.search) params.append('search', filters.search);
   
   const response = await api.get(`/doctors${params.toString() ? `?${params}` : ''}`);
-  // Response: { success, data: { doctors, pagination } }
   return response.data;
 };
 
-// ✅ FIX: Get single doctor by ID
+// ✅ Get single doctor by ID for public viewing (patients)
 export const getDoctorById = async (id) => {
-  const response = await api.get(`/doctors/${id}`);
-  console.log('Doctor API Response:', response.data);
+  const response = await api.get(`/doctors/public/${id}`);
+  console.log('Public Doctor API Response:', response.data);
   
-  // ✅ Return the actual doctor object from response.data.data
   if (response.data.success && response.data.data) {
     return response.data.data;
   }

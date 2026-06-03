@@ -33,7 +33,7 @@ export default function DoctorSidebar({ active, setActive, mobileOpen, onClose }
       {/* Logo - Clickable to go home */}
       <div className="p-6 border-b border-gray-100">
         <div
-          onClick={() => navigate('/')}
+          // onClick={() => navigate('/')}
           className="flex items-center gap-3 cursor-pointer group"
         >
           <div

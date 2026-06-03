@@ -1,22 +1,22 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { fetchPatientAppointments, fetchPatientProfile } from "../../../redux/slices/patientSlice";
 import { cancelUserAppointment } from "../../../redux/slices/appointmentSlice";
 import { Icon, icons } from "./shared/Icon";
 import { toast } from "react-hot-toast";
 import VideoCall from "../../../components/VideoCall";
 
-const filters = ["all", "pending", "confirmed", "completed", "cancelled"];
+const filters = ["all", "pending", "upcoming", "live", "completed", "cancelled", "missed", "no-show"];
 
 export default function AppointmentsSection() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { appointments, loading } = useSelector((state) => state.patient);
   const { user } = useSelector((state) => state.auth);
   
   const [filter, setFilter] = useState("all");
   const [cancellingId, setCancellingId] = useState(null);
-  
-  // Video call state
   const [showVideoCall, setShowVideoCall] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
 
@@ -24,61 +24,131 @@ export default function AppointmentsSection() {
     dispatch(fetchPatientAppointments());
   }, [dispatch]);
 
-  useEffect(() => {
-    console.log('Appointments data:', appointments);
-  }, [appointments]);
-
-  // ✅ Check if appointment can be joined
-  const canJoinAppointment = (appointment) => {
-    if (appointment.status !== 'confirmed') return false;
-    const appointmentTime = new Date(appointment.date);
+  // ✅ Get appointment state with full logic (including no-show)
+  const getAppointmentState = (appointment) => {
     const now = new Date();
-    const timeDiff = (now - appointmentTime) / (1000 * 60);
-    // Allow from 5 minutes before to 30 minutes after
-    return timeDiff >= -5 && timeDiff <= 30;
-  };
-
-  // ✅ Get status with live indicator
-  const getStatusWithLive = (appointment) => {
+    const appointmentTime = new Date(appointment.date);
+    const timeDiffMinutes = (now - appointmentTime) / (1000 * 60);
+    
+    // Cancelled
+    if (appointment.status === 'cancelled') {
+      return { 
+        state: 'cancelled', 
+        label: 'Cancelled', 
+        color: 'bg-red-100 text-red-700', 
+        icon: '❌', 
+        canJoin: false, 
+        canCancel: false,
+        canRetry: false,
+        badge: 'Cancelled',
+        refundAmount: appointment.refundAmount || 0,
+        refundPercentage: appointment.refundPercentage || 0,
+        refundId: appointment.refundId || null
+      };
+    }
+    
+    // Completed
+    if (appointment.status === 'completed') {
+      return { 
+        state: 'completed', 
+        label: 'Completed', 
+        color: 'bg-green-100 text-green-700', 
+        icon: '✅', 
+        canJoin: false, 
+        canCancel: false,
+        canRetry: false,
+        badge: 'Completed',
+        refundAmount: 0
+      };
+    }
+    
+    // No-Show
+    if (appointment.status === 'no-show') {
+      return { 
+        state: 'no-show', 
+        label: 'No-Show', 
+        color: 'bg-gray-100 text-gray-500', 
+        icon: '🚫', 
+        canJoin: false, 
+        canCancel: false,
+        canRetry: false,
+        badge: 'No-Show',
+        refundAmount: 0
+      };
+    }
+    
+    // Pending - Payment not completed
+    if (appointment.status === 'pending') {
+      return { 
+        state: 'pending', 
+        label: 'Payment Pending', 
+        color: 'bg-yellow-100 text-yellow-700', 
+        icon: '⏳', 
+        canJoin: false, 
+        canCancel: true,
+        canRetry: true,
+        badge: 'Pending',
+        refundAmount: 0
+      };
+    }
+    
+    // Confirmed appointments
     if (appointment.status === 'confirmed') {
-      const appointmentTime = new Date(appointment.date);
-      const now = new Date();
-      if (now >= appointmentTime && (now - appointmentTime) / (1000 * 60) <= 30) {
-        return { label: 'Live Now', color: 'bg-green-100 text-green-700 animate-pulse' };
+      // Live: 30 minutes before to 30 minutes after
+      if (timeDiffMinutes >= -30 && timeDiffMinutes <= 30) {
+        return { 
+          state: 'live', 
+          label: 'Live Now', 
+          color: 'bg-green-100 text-green-700 animate-pulse', 
+          icon: '🔴', 
+          canJoin: true, 
+          canCancel: false,
+          canRetry: false,
+          badge: 'Live Now',
+          refundAmount: 0
+        };
       }
-      if (now < appointmentTime) {
-        return { label: 'Upcoming', color: 'bg-blue-100 text-blue-700' };
+      // Upcoming: more than 30 minutes in future
+      if (timeDiffMinutes < -30) {
+        return { 
+          state: 'upcoming', 
+          label: 'Upcoming', 
+          color: 'bg-blue-100 text-blue-700', 
+          icon: '⏰', 
+          canJoin: false, 
+          canCancel: true,
+          canRetry: false,
+          badge: 'Upcoming',
+          refundAmount: 0
+        };
+      }
+      // Missed/Expired: more than 30 minutes past
+      if (timeDiffMinutes > 30) {
+        return { 
+          state: 'missed', 
+          label: 'Missed', 
+          color: 'bg-gray-100 text-gray-500', 
+          icon: '⚠️', 
+          canJoin: false, 
+          canCancel: false,
+          canRetry: false,
+          badge: 'Missed',
+          refundAmount: 0
+        };
       }
     }
-    return null;
-  };
-
-  // Get status color for badge
-  const getStatusColor = (status) => {
-    switch(status) {
-      case 'confirmed': return 'bg-green-100 text-green-700';
-      case 'pending': return 'bg-yellow-100 text-yellow-700';
-      case 'completed': return 'bg-blue-100 text-blue-700';
-      case 'cancelled': return 'bg-red-100 text-red-700';
-      default: return 'bg-gray-100 text-gray-600';
-    }
-  };
-
-  // Get status label
-  const getStatusLabel = (status) => {
-    switch(status) {
-      case 'confirmed': return 'Confirmed';
-      case 'pending': return 'Pending';
-      case 'completed': return 'Completed';
-      case 'cancelled': return 'Cancelled';
-      default: return status;
-    }
-  };
-
-  // Get avatar initials from doctor name
-  const getInitials = (name) => {
-    if (!name) return 'Dr';
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+    
+    return { 
+      state: 'unknown', 
+      label: appointment.status, 
+      color: 'bg-gray-100 text-gray-600', 
+      icon: '📋', 
+      canJoin: false, 
+      canCancel: false,
+      canRetry: false,
+      badge: appointment.status,
+      refundAmount: 0
+    };
   };
 
   const handleCancel = async (appointmentId) => {
@@ -97,10 +167,42 @@ export default function AppointmentsSection() {
     }
   };
 
-  // Filter appointments
-  const filteredAppointments = filter === "all" 
-    ? appointments 
-    : appointments?.filter((a) => a.status === filter);
+  // Retry payment for pending appointments
+  const handleRetryPayment = (appointment) => {
+    navigate(`/doctor/${appointment.doctorId?._id || appointment.doctorId}/book`, {
+      state: { 
+        doctor: appointment.doctorId,
+        selectedDate: new Date(appointment.date).toISOString().split('T')[0],
+        selectedTime: appointment.timeSlot
+      }
+    });
+  };
+
+  // Filter appointments based on state
+  const getFilteredAppointments = () => {
+    if (filter === 'all') return appointments;
+    
+    return appointments?.filter((apt) => {
+      if (apt.status === 'cancelled' && filter === 'cancelled') return true;
+      if (apt.status === 'completed' && filter === 'completed') return true;
+      if (apt.status === 'pending' && filter === 'pending') return true;
+      if (apt.status === 'no-show' && filter === 'no-show') return true;
+      
+      const state = getAppointmentState(apt).state;
+      if (filter === 'upcoming') return state === 'upcoming';
+      if (filter === 'live') return state === 'live';
+      if (filter === 'missed') return state === 'missed';
+      return false;
+    });
+  };
+
+  const filteredAppointments = getFilteredAppointments();
+
+  // Get initials from name
+  const getInitials = (name) => {
+    if (!name) return 'Dr';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  };
 
   if (loading && appointments?.length === 0) {
     return (
@@ -128,7 +230,7 @@ export default function AppointmentsSection() {
                 : "bg-gray-100 text-gray-500 hover:bg-gray-200"
             }`}
           >
-            {f}
+            {f === 'no-show' ? 'No-Show' : f}
           </button>
         ))}
       </div>
@@ -141,8 +243,9 @@ export default function AppointmentsSection() {
       ) : (
         <div className="space-y-4">
           {filteredAppointments?.map((apt) => {
-            const doctorName = apt.doctorId?.fullName || 'N/A';
-            const displayName = doctorName === 'N/A' ? 'Dr. N/A' : `${doctorName}`;
+            const appointmentState = getAppointmentState(apt);
+            const doctorName = apt.doctorId?.fullName || 'Doctor';
+            const displayName = `Dr. ${doctorName}`;
             const doctorSpecialty = apt.doctorId?.specialization || 'General Physician';
             const date = new Date(apt.date).toLocaleDateString('en-IN', {
               day: 'numeric',
@@ -150,19 +253,15 @@ export default function AppointmentsSection() {
               year: 'numeric'
             });
             
-            const liveStatus = getStatusWithLive(apt);
-            const isJoinable = canJoinAppointment(apt);
-            const isUpcoming = apt.status === 'confirmed' && new Date(apt.date) > new Date();
-            
             return (
               <div
                 key={apt._id}
-                className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col sm:flex-row sm:items-center gap-4 hover:shadow-md transition-all duration-200"
+                className={`bg-white rounded-2xl border p-5 flex flex-col sm:flex-row sm:items-center gap-4 hover:shadow-md transition-all duration-200 ${
+                  appointmentState.state === 'live' ? 'border-primary/30 shadow-md ring-1 ring-primary/20' : 'border-gray-100'
+                }`}
               >
                 {/* Avatar */}
-                <div
-                  className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold shrink-0 bg-primary"
-                >
+                <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold shrink-0 bg-primary">
                   {getInitials(doctorName)}
                 </div>
 
@@ -188,17 +287,11 @@ export default function AppointmentsSection() {
 
                 {/* Status + Actions */}
                 <div className="flex items-center gap-3 shrink-0">
-                  {liveStatus ? (
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium capitalize ${liveStatus.color}`}>
-                      {liveStatus.label}
-                    </span>
-                  ) : (
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium capitalize ${getStatusColor(apt.status)}`}>
-                      {getStatusLabel(apt.status)}
-                    </span>
-                  )}
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${appointmentState.color}`}>
+                    {appointmentState.icon} {appointmentState.label}
+                  </span>
                   
-                  {apt.status === 'confirmed' && !isJoinable && !isUpcoming && (
+                  {appointmentState.canCancel && (
                     <button
                       onClick={() => handleCancel(apt._id)}
                       disabled={cancellingId === apt._id}
@@ -207,62 +300,72 @@ export default function AppointmentsSection() {
                       {cancellingId === apt._id ? '...' : 'Cancel'}
                     </button>
                   )}
+                  
+                  {/* Retry Payment Button for Pending Appointments */}
+                  {appointmentState.canRetry && (
+                    <button
+                      onClick={() => handleRetryPayment(apt)}
+                      className="px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-medium hover:bg-primary-dark transition-all"
+                    >
+                      Retry Payment
+                    </button>
+                  )}
+                  
+                  {appointmentState.canJoin && (
+                    <button
+                      onClick={() => {
+                        setSelectedAppointment(apt);
+                        setShowVideoCall(true);
+                      }}
+                      className="px-4 py-1.5 bg-primary text-white rounded-lg text-sm font-medium flex items-center gap-2 animate-pulse hover:bg-primary-dark transition-all"
+                    >
+                      🎥 Join Now
+                    </button>
+                  )}
                 </div>
+
+                {/* ✅ REFUND BADGE - Show refund info for cancelled appointments */}
+                {appointmentState.state === 'cancelled' && appointmentState.refundAmount > 0 && (
+                  <div className="mt-3 p-2 bg-green-50 rounded-lg border border-green-200">
+                    <p className="text-xs text-green-700">
+                      💰 Refund of ₹{appointmentState.refundAmount} ({appointmentState.refundPercentage}%) processed
+                    </p>
+                    {appointmentState.refundId && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Refund ID: {appointmentState.refundId.substring(0, 15)}...
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* ✅ No Refund Message */}
+                {appointmentState.state === 'cancelled' && appointmentState.refundAmount === 0 && apt.paymentStatus === 'paid' && (
+                  <div className="mt-3 p-2 bg-red-50 rounded-lg border border-red-200">
+                    <p className="text-xs text-red-700">
+                      ⚠️ No refund applicable (cancelled less than 12 hours before appointment)
+                    </p>
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
       )}
 
-      {/* Join Now Button Section - Separate from main card */}
-      <div className="mt-6 space-y-4">
-        {filteredAppointments?.map((apt) => {
-          const isJoinable = canJoinAppointment(apt);
-          
-          if (!isJoinable) return null;
-          
-          return (
-            <div key={`join-${apt._id}`} className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-2xl p-4 border border-primary/20">
-              <div className="flex items-center justify-between flex-wrap gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-gray-800">
-                    Live Consultation with Dr. {apt.doctorId?.fullName}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Your appointment is ready. Click Join Now to start video consultation.
-                  </p>
-                </div>
-                <button
-                  onClick={() => {
-                    setSelectedAppointment(apt);
-                    setShowVideoCall(true);
-                  }}
-                  className="px-5 py-2 bg-primary text-white rounded-lg text-sm font-medium flex items-center gap-2 hover:bg-primary-dark transition-all animate-pulse"
-                >
-                  <Icon d={icons.video} size={16} />
-                  Join Now
-                </button>
-              </div>
+      {/* Live Appointments Summary Banner */}
+      {filteredAppointments?.some(apt => getAppointmentState(apt).state === 'live') && (
+        <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-primary/5 rounded-2xl border border-green-200">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 text-xl">
+              🎥
             </div>
-          );
-        })}
-      </div>
-
-      {/* Upcoming Appointments Message */}
-      <div className="mt-4 space-y-2">
-        {filteredAppointments?.map((apt) => {
-          const isUpcoming = apt.status === 'confirmed' && new Date(apt.date) > new Date();
-          if (!isUpcoming) return null;
-          
-          return (
-            <div key={`upcoming-${apt._id}`} className="text-center">
-              <p className="text-xs text-gray-400">
-                ⏰ Upcoming appointment with Dr. {apt.doctorId?.fullName} on {new Date(apt.date).toLocaleDateString()} at {apt.timeSlot}
-              </p>
+            <div>
+              <p className="text-sm font-semibold text-gray-800">You have live consultations</p>
+              <p className="text-xs text-gray-500">Click "Join Now" to start your video consultation</p>
             </div>
-          );
-        })}
-      </div>
+          </div>
+        </div>
+      )}
 
       {/* Video Call Modal */}
       {showVideoCall && selectedAppointment && (

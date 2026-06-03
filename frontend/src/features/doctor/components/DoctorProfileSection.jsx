@@ -32,6 +32,7 @@ export default function DoctorProfileSection() {
       });
     } catch (error) {
       console.error('Error fetching profile:', error);
+      toast.error('Failed to load profile');
     } finally {
       setLoading(false);
     }
@@ -75,17 +76,17 @@ export default function DoctorProfileSection() {
         {/* Header */}
         <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-6">
           <div className="flex items-center gap-4">
-            <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center text-primary text-3xl">
+            <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center text-primary text-3xl font-bold">
               {user?.fullName?.[0] || 'D'}
             </div>
-            <div>
+            <div className="flex-1">
               <h1 className="text-xl font-bold text-gray-900">{user?.fullName}</h1>
               <p className="text-primary capitalize">{profile?.specialization}</p>
               <p className="text-sm text-gray-500">{profile?.experience} years experience</p>
             </div>
             <button
               onClick={() => setIsEditing(!isEditing)}
-              className="ml-auto px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50"
+              className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
             >
               {isEditing ? 'Cancel' : 'Edit Profile'}
             </button>
@@ -166,7 +167,9 @@ export default function DoctorProfileSection() {
 
           {isEditing && (
             <div className="flex justify-end">
-              <button onClick={handleSave} className="px-5 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark">Save Changes</button>
+              <button onClick={handleSave} className="px-5 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors">
+                Save Changes
+              </button>
             </div>
           )}
         </div>

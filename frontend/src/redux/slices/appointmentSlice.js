@@ -19,7 +19,7 @@ export const fetchMyAppointments = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await getUserAppointments();
-      console.log('fetchMyAppointments response:', response); // Debug log
+      console.log('fetchMyAppointments response:', response);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message);
@@ -33,10 +33,17 @@ export const cancelUserAppointment = createAsyncThunk(
     try {
       const response = await cancelAppointment(appointmentId);
       
-      // ✅ After successful cancellation, refetch appointments to get updated list
+      // After successful cancellation, refetch appointments to get updated list
       await dispatch(fetchMyAppointments());
       
-      return { id: appointmentId, message: response.message };
+      // ✅ Return refund information from response
+      return { 
+        id: appointmentId, 
+        message: response.message,
+        refundAmount: response.refundAmount || response.data?.refundAmount || 0,
+        refundPercentage: response.refundPercentage || response.data?.refundPercentage || 0,
+        refundId: response.refundId || response.data?.refundId || null
+      };
     } catch (error) {
       return rejectWithValue(error.response?.data?.message);
     }
@@ -60,12 +67,15 @@ const appointmentSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
-    // ✅ Manual update appointment status (optional)
+    // ✅ Update appointment status manually (optimistic update)
     updateAppointmentStatus: (state, action) => {
-      const { id, status } = action.payload;
+      const { id, status, refundAmount, refundPercentage, refundId } = action.payload;
       const appointment = state.appointments.find(apt => apt._id === id);
       if (appointment) {
         appointment.status = status;
+        if (refundAmount !== undefined) appointment.refundAmount = refundAmount;
+        if (refundPercentage !== undefined) appointment.refundPercentage = refundPercentage;
+        if (refundId !== undefined) appointment.refundId = refundId;
       }
     }
   },
@@ -109,11 +119,14 @@ const appointmentSlice = createSlice({
       })
       .addCase(cancelUserAppointment.fulfilled, (state, action) => {
         state.loading = false;
-        // ✅ No need to manually filter because fetchMyAppointments already refetched
-        // But keep for backward compatibility
-        state.appointments = state.appointments.filter(
-          (apt) => apt._id !== action.payload.id
-        );
+        // ✅ Update the appointment in the list with refund info
+        const index = state.appointments.findIndex(apt => apt._id === action.payload.id);
+        if (index !== -1) {
+          state.appointments[index].status = 'cancelled';
+          state.appointments[index].refundAmount = action.payload.refundAmount || 0;
+          state.appointments[index].refundPercentage = action.payload.refundPercentage || 0;
+          state.appointments[index].refundId = action.payload.refundId || null;
+        }
       })
       .addCase(cancelUserAppointment.rejected, (state, action) => {
         state.loading = false;

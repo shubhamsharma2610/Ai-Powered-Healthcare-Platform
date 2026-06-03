@@ -20,7 +20,7 @@ export default function Login() {
   useEffect(() => {
     if (isAuthenticated && role) {
       if (role === 'admin') navigate('/admin');
-      else if (role === 'doctor') navigate('/doctor/dashboard');
+      else if (role === 'Doctor') navigate('/doctor/dashboard');
       else navigate('/patient/dashboard');
     }
   }, [isAuthenticated, role, navigate]);

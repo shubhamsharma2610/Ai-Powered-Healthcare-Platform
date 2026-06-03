@@ -6,6 +6,7 @@ import appointmentRoutes from './routes/appointmentsRoutes.js';
 import patientRoutes from './routes/patientRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js'; 
 import aiRoutes from './routes/aiRoutes.js'; 
+import refundRoutes from './routes/refundRoutes.js';
 import  {testGemini}  from './controllers/testAiController.js'; 
 import { errorHandler } from './utils/errorHandler.js';
 import cookieParser from "cookie-parser"
@@ -65,7 +66,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/patients', patientRoutes);
 
 app.use('/api/ai', aiRoutes);
-
+app.use('/api/refunds', refundRoutes);
 
 app.get('/test', testGemini);
 

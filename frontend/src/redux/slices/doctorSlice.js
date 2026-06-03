@@ -8,10 +8,9 @@ export const fetchDoctors = createAsyncThunk(
       const response = await getAllDoctors(filters);
       console.log('=== Doctors API Response ===', response);
       
-      // response = { success, data: { doctors, pagination } }
       if (response.success && response.data) {
         console.log('✅ Returning payload:', response.data);
-        return response.data; // { doctors, pagination }
+        return response.data;
       }
       console.log('❌ Response structure incorrect:', response);
       return { doctors: [], pagination: {} };
@@ -22,6 +21,7 @@ export const fetchDoctors = createAsyncThunk(
   }
 );
 
+// ✅ UPDATED: fetchDoctorById - No breaking changes, only uses getDoctorById
 export const fetchDoctorById = createAsyncThunk(
   'doctors/fetchById',
   async (id, { rejectWithValue }) => {
@@ -30,7 +30,8 @@ export const fetchDoctorById = createAsyncThunk(
       console.log('Doctor data in thunk:', doctorData);
       return doctorData;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message);
+      console.error('❌ Fetch doctor by ID error:', error);
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch doctor details');
     }
   }
 );
@@ -87,7 +88,6 @@ const doctorSlice = createSlice({
         state.loading = false;
         console.log('📦 Redux Payload:', action.payload);
         console.log('📦 Doctors extracted:', action.payload?.doctors);
-        // ✅ action.payload contains { doctors, pagination }
         state.doctors = action.payload?.doctors || [];
         state.pagination = action.payload?.pagination || initialState.pagination;
         console.log('📦 State updated:', { doctors: state.doctors.length, pagination: state.pagination });
@@ -97,23 +97,33 @@ const doctorSlice = createSlice({
         state.error = action.payload;
         console.error('❌ Redux Error:', action.payload);
       })
+      
       // Fetch Doctor By ID
       .addCase(fetchDoctorById.pending, (state) => {
         state.loading = true;
+        state.error = null;
       })
       .addCase(fetchDoctorById.fulfilled, (state, action) => {
         state.loading = false;
         state.selectedDoctor = action.payload;
+        console.log('✅ Doctor loaded:', state.selectedDoctor?.fullName);
       })
       .addCase(fetchDoctorById.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+        console.error('❌ Fetch doctor error:', action.payload);
       })
+      
       // Fetch Specializations
+      .addCase(fetchSpecializations.pending, (state) => {
+        state.loading = true;
+      })
       .addCase(fetchSpecializations.fulfilled, (state, action) => {
+        state.loading = false;
         state.specializations = action.payload || [];
       })
       .addCase(fetchSpecializations.rejected, (state) => {
+        state.loading = false;
         state.specializations = [];
       });
   }

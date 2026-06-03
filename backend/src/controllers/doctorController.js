@@ -359,7 +359,7 @@ export const getDoctorAppointments = async (req, res) => {
 };
 
 /**
- * @desc    Update appointment status (confirm, complete, cancel)
+ * @desc    Update appointment status (confirm, complete, cancel, no-show)
  * @route   PUT /api/doctors/appointments/:id/status
  * @access  Private (Doctor only)
  */
@@ -368,9 +368,21 @@ export const updateAppointmentStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
     
+    const updateData = { status };
+    
+    // ✅ If marking as completed, add completedAt timestamp
+    if (status === 'completed') {
+      updateData.completedAt = new Date();
+    }
+    
+    // ✅ If marking as no-show, add noShowAt timestamp
+    if (status === 'no-show') {
+      updateData.noShowAt = new Date();
+    }
+    
     const appointment = await Appointment.findOneAndUpdate(
       { _id: id, doctorId: req.user.id },
-      { status },
+      updateData,
       { new: true }
     ).populate('patientId', 'fullName email');
     
@@ -378,8 +390,16 @@ export const updateAppointmentStatus = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Appointment not found' });
     }
     
+    // ✅ If completed, update doctor's total consultations
+    if (status === 'completed') {
+      await Doctor.findByIdAndUpdate(req.user.id, {
+        $inc: { totalConsultations: 1 }
+      });
+    }
+    
     res.json({ success: true, data: appointment });
   } catch (error) {
+    console.error('Update appointment status error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -457,16 +477,24 @@ export const getDoctorStats = async (req, res) => {
     
     const completedAppointments = appointments.filter(apt => apt.status === 'completed');
     const upcomingAppointments = appointments.filter(apt => apt.status === 'confirmed' && new Date(apt.date) > new Date());
+    const pendingAppointments = appointments.filter(apt => apt.status === 'pending');
+    const noShowAppointments = appointments.filter(apt => apt.status === 'no-show');
     
-    // Calculate total earnings from completed appointments
-    const payments = await Payment.find({ 
-      doctorId, 
-      status: 'success' 
-    });
-    const totalEarnings = payments.reduce((sum, p) => sum + p.amount, 0);
+    // ✅ CRITICAL: Calculate earnings ONLY from COMPLETED appointments
+    const totalEarnings = completedAppointments.reduce((sum, apt) => sum + apt.amount, 0);
     
-    // Unique patients count
-    const uniquePatients = new Set(appointments.map(apt => apt.patientId?.toString())).size;
+    // ✅ Alternative: If you have payments collection, use that (more reliable)
+    // const payments = await Payment.find({ 
+    //   doctorId, 
+    //   status: 'success',
+    //   appointmentId: { $in: completedAppointments.map(a => a._id) }
+    // });
+    // const totalEarnings = payments.reduce((sum, p) => sum + p.amount, 0);
+    
+    // Unique patients count (from completed appointments only)
+    const uniquePatients = new Set(
+      completedAppointments.map(apt => apt.patientId?.toString())
+    ).size;
     
     res.json({
       success: true,
@@ -475,12 +503,15 @@ export const getDoctorStats = async (req, res) => {
         totalAppointments: appointments.length,
         completedAppointments: completedAppointments.length,
         upcomingAppointments: upcomingAppointments.length,
+        pendingAppointments: pendingAppointments.length,
+        noShowAppointments: noShowAppointments.length,
         totalPatients: uniquePatients,
-        totalEarnings,
+        totalEarnings,  // ✅ Only from completed appointments
         recentAppointments: appointments.slice(0, 5)
       }
     });
   } catch (error) {
+    console.error('Get doctor stats error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -517,5 +548,89 @@ export const updateDoctorSchedule = async (req, res) => {
     res.json({ success: true, data: doctor?.availability || [] });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
+
+/**
+ * @desc    Get doctor's schedule by ID (Public - for patients)
+ * @route   GET /api/doctors/:id/schedule
+ * @access  Public
+ */
+export const getDoctorScheduleById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const doctor = await Doctor.findById(id).select('availability');
+    
+    if (!doctor) {
+      return res.status(404).json({ success: false, message: 'Doctor not found' });
+    }
+    
+    res.json({ success: true, data: doctor?.availability || [] });
+  } catch (error) {
+    console.error('Get doctor schedule by ID error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
+
+
+/**
+ * @desc    Get doctor profile for public viewing (patients)
+ * @route   GET /api/doctors/public/:id
+ * @access  Public
+ */
+export const getPublicDoctorById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Find doctor by ID
+    const doctor = await Doctor.findById(id);
+    
+    if (!doctor || !doctor.isApproved) {
+      return res.status(404).json({ success: false, message: 'Doctor not found' });
+    }
+    
+    // Get user data (name, email, profile picture)
+    const user = await User.findById(doctor._id).select('fullName email profilePicture');
+    
+    // Format response for public viewing
+    const formattedDoctor = {
+      id: String(doctor._id),
+      fullName: user?.fullName || 'Doctor',
+      email: user?.email || '',
+      profilePicture: doctor.profilePicture || user?.profilePicture || '',
+      specialization: doctor.specialization,
+      experience: doctor.experience,
+      consultationFee: doctor.consultationFee,
+      rating: doctor.rating,
+      totalConsultations: doctor.totalConsultations,
+      clinicAddress: doctor.clinicAddress,
+      bio: doctor.bio,
+      phoneNumber: doctor.phoneNumber,
+      qualifications: doctor.qualifications,
+      availability: doctor.availability
+    };
+    
+    res.status(200).json({
+      success: true,
+      data: formattedDoctor
+    });
+    
+  } catch (error) {
+    console.error('Get public doctor by ID error:', error);
+    
+    if (error.name === 'CastError') {
+      return res.status(404).json({ success: false, message: 'Doctor not found' });
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch doctor details',
+      error: error.message
+    });
   }
 };
