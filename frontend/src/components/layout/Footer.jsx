@@ -96,7 +96,7 @@ const Footer = () => {
 
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-gray-800 text-center text-xs text-gray-500">
-          <p>© {currentYear} HealthHub AI. All rights reserved. Designed for smarter care.</p>
+          <p>© {currentYear} HealthHub. All rights reserved. Designed for smarter care.</p>
         </div>
       </div>
     </footer>

@@ -82,7 +82,7 @@ function SidebarContent({ active, setActive, onClose }) {
           </div>
           <div>
             <h1 className="font-display text-lg font-black text-gray-800 leading-none">
-              Medi<span className="text-primary">AI</span>
+              Health<span className="text-primary">Hub</span>
             </h1>
             <p className="text-[9px] font-bold tracking-widest text-gray-400 uppercase mt-1">Smart Health</p>
           </div>

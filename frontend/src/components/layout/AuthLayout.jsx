@@ -37,7 +37,7 @@ export default function AuthLayout() {
             <Activity size={17} className="text-white" />
           </div>
           <span className="text-[19px] font-extrabold font-display tracking-tight text-gray-900">
-            Health<span className="text-primary">Sync</span>
+            Health<span className="text-primary">Hub</span>
           </span>
         </Link>
 
@@ -109,7 +109,7 @@ export default function AuthLayout() {
                 managed.
               </h1>
               <p className="text-[13px] leading-relaxed text-white/55 max-w-xs">
-                Join millions who trust HealthSync for real-time diagnostics,
+                Join millions who trust HealthHub for real-time diagnostics,
                 seamless care coordination, and AI-driven health insights.
               </p>
             </div>
@@ -183,7 +183,7 @@ export default function AuthLayout() {
                   <Activity size={13} className="text-white" />
                 </div>
                 <span className="text-[14px] font-extrabold font-display tracking-tight text-gray-900">
-                  Health<span className="text-primary">Sync</span>
+                  Health<span className="text-primary">Hub</span>
                 </span>
               </Link>
 
@@ -197,8 +197,8 @@ export default function AuthLayout() {
             </div>
 
             {/* <div className="px-4 sm:px-6 py-2.5 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <span className="text-[10px] text-gray-400 order-2 sm:order-1">
-                © {new Date().getFullYear()} HealthSync Inc. All rights reserved.
+                <span className="text-[10px] text-gray-400 order-2 sm:order-1">
+                © {new Date().getFullYear()} HealthHub Inc. All rights reserved.
               </span>
               <div className="flex items-center gap-4 order-1 sm:order-2">
                 {footerLinks.map(item => (

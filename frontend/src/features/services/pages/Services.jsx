@@ -112,8 +112,8 @@ function Services() {
           <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
             <h2 className="text-xl font-bold text-gray-800 mb-3">Ready to Get Started?</h2>
             <p className="text-gray-500 text-sm mb-5">
-              Join thousands of happy patients using HealthSync
-            </p>
+                Join thousands of happy patients using HealthHub
+              </p>
             <div className="flex flex-wrap gap-3 justify-center">
               <Link 
                 to="/find-doctors" 
