@@ -94,21 +94,112 @@ const doctorSchema = new mongoose.Schema(
       }
     ],
 
-    // change after testing
+    // ========== APPROVAL WORKFLOW FIELDS ==========
     isApproved: {
       type: Boolean,
-      default: true 
+      default: false
     },
-    approvedAt: Date,
-    rejectionReason: String
+    
+    // ✅ NEW: Flag to track if doctor has submitted profile for approval
+    submittedForApproval: {
+      type: Boolean,
+      default: false
+    },
+    
+    // ✅ NEW: Flag to track if doctor is rejected
+    isRejected: {
+      type: Boolean,
+      default: false
+    },
+    
+    // When doctor submitted for approval
+    submittedAt: {
+      type: Date
+    },
+    
+    // When admin approved the doctor
+    approvedAt: {
+      type: Date
+    },
+    
+    // When admin rejected the doctor
+    rejectedAt: {
+      type: Date
+    },
+    
+    // Reason for rejection (if rejected)
+    rejectionReason: {
+      type: String,
+      default: ''
+    },
+    
+    // ✅ NEW: Current status for easier querying
+    status: {
+      type: String,
+      enum: ['pending', 'submitted', 'active', 'rejected'],
+      default: 'pending'
+    }
+    // =============================================
   },
   { timestamps: true }
 );
 
-// Index for faster queries
+// Indexes for faster queries
 doctorSchema.index({ specialization: 1 });
 doctorSchema.index({ isApproved: 1 });
-doctorSchema.index({ consultationFee: 1 }); // Add this for filtering by fee
+doctorSchema.index({ submittedForApproval: 1 }); // ✅ For filtering pending approvals
+doctorSchema.index({ consultationFee: 1 });
+doctorSchema.index({ status: 1 }); // ✅ For quick status filtering
+
+// ✅ Virtual to check if profile is complete
+doctorSchema.virtual('isProfileComplete').get(function() {
+  return !!(this.phoneNumber && 
+            this.consultationFee > 0 && 
+            this.bio && 
+            this.clinicAddress?.street &&
+            this.clinicAddress?.city &&
+            this.clinicAddress?.state &&
+            this.clinicAddress?.zipCode &&
+            this.clinicAddress?.country);
+});
+
+// ✅ Method to submit for approval
+doctorSchema.methods.submitForApproval = function() {
+  if (this.isProfileComplete && !this.isApproved && !this.submittedForApproval) {
+    this.submittedForApproval = true;
+    this.submittedAt = new Date();
+    this.status = 'submitted';
+    this.isRejected = false;
+    this.rejectionReason = '';
+    return true;
+  }
+  return false;
+};
+
+// ✅ Method to approve doctor
+doctorSchema.methods.approve = function() {
+  this.isApproved = true;
+  this.submittedForApproval = false;
+  this.approvedAt = new Date();
+  this.status = 'active';
+  this.isRejected = false;
+  return true;
+};
+
+// ✅ Method to reject doctor
+doctorSchema.methods.reject = function(reason = '') {
+  this.isApproved = false;
+  this.submittedForApproval = false;
+  this.isRejected = true;
+  this.rejectedAt = new Date();
+  this.rejectionReason = reason || 'Profile does not meet requirements';
+  this.status = 'rejected';
+  return true;
+};
+
+// Ensure virtuals are included in JSON output
+doctorSchema.set('toJSON', { virtuals: true });
+doctorSchema.set('toObject', { virtuals: true });
 
 const Doctor = User.discriminator('Doctor', doctorSchema);
 export default Doctor;

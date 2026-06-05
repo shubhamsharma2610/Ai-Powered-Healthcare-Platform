@@ -6,7 +6,7 @@ import { asyncHandler } from '../utils/errorHandler.js';
 import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '../constants/roles.js';
 
 /**
- * REGISTER - Create new user (Patient or Doctor)
+ * REGISTER - Create new user (Patient, Doctor, or Admin)
  * @route POST /api/auth/register
  * @access Public
  */
@@ -64,46 +64,56 @@ export const register = asyncHandler(async (req, res) => {
       phoneNumber: otherData.phoneNumber
     });
   } 
- else if (role === 'doctor') {
-  const { licenseNumber, specialization, experience } = otherData;
+  else if (role === 'doctor') {
+    const { licenseNumber, specialization, experience } = otherData;
 
-  if (!licenseNumber || !specialization || experience === undefined) {
-    return res.status(400).json({
-      success: false,
-      message: 'Doctor requires license number, specialization, and experience',
-      statusCode: 400
+    if (!licenseNumber || !specialization || experience === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: 'Doctor requires license number, specialization, and experience',
+        statusCode: 400
+      });
+    }
+
+    const existingDoctor = await Doctor.findOne({ licenseNumber });
+    if (existingDoctor) {
+      return res.status(400).json({
+        success: false,
+        message: 'License number already registered',
+        statusCode: 400
+      });
+    }
+
+    newUser = new Doctor({
+      fullName: fullName.trim(),
+      email: email.toLowerCase(),
+      password,
+      licenseNumber: licenseNumber.trim(),
+      specialization,
+      experience: parseInt(experience),
+      phoneNumber: otherData.phoneNumber,
+      bio: otherData.bio,
+      clinicAddress: otherData.clinicAddress,
+      consultationFee: otherData.consultationFee,
+      qualifications: otherData.qualifications || [],
+      isApproved: false  // For testing, auto-approve. In production, set to false
     });
   }
-
-  const existingDoctor = await Doctor.findOne({ licenseNumber });
-  if (existingDoctor) {
-    return res.status(400).json({
-      success: false,
-      message: 'License number already registered',
-      statusCode: 400
+  else if (role === 'admin') {
+    // ✅ Admin registration
+    newUser = new User({
+      fullName: fullName.trim(),
+      email: email.toLowerCase(),
+      password,
+      role: 'admin',
+      isVerified: true,
+      isActive: true
     });
   }
-
-  // ✅ CORRECT - No 'role' field
-  newUser = new Doctor({
-    fullName: fullName.trim(),
-    email: email.toLowerCase(),
-    password,
-    licenseNumber: licenseNumber.trim(),
-    specialization,
-    experience: parseInt(experience),
-    phoneNumber: otherData.phoneNumber,
-    bio: otherData.bio,
-    clinicAddress: otherData.clinicAddress,
-    consultationFee: otherData.consultationFee,
-    qualifications: otherData.qualifications || [],
-    isApproved: true
-  });
-}
   else {
     return res.status(400).json({
       success: false,
-      message: 'Invalid role. Must be patient or doctor',
+      message: 'Invalid role. Must be patient, doctor, or admin',
       statusCode: 400
     });
   }
@@ -114,11 +124,12 @@ export const register = asyncHandler(async (req, res) => {
   return res.status(201).json({
     success: true,
     message: "Registration successful",
-    statusCode: 201
-    // token,
-    // user: newUser.toJSON()
+    statusCode: 201,
+    token,
+    user: newUser.toJSON()
   });
 });
+
 /**
  * LOGIN - Authenticate user with email and password
  * @route POST /api/auth/login
@@ -172,7 +183,7 @@ export const login = asyncHandler(async (req, res) => {
     const token = generateToken(user._id, user.role);
     res.cookie("token", token, {
       httpOnly: true,
-      secure: false, // true in production with HTTPS
+      secure: process.env.NODE_ENV === 'production',
       maxAge: 24 * 60 * 60 * 1000
     });
 
@@ -181,7 +192,6 @@ export const login = asyncHandler(async (req, res) => {
         maxAge: 7 * 24 * 60 * 60 * 1000,
         sameSite: 'strict'
     });
-
 
     return res.status(200).json({
       success: true,
@@ -240,6 +250,10 @@ export const getCurrentUser = asyncHandler(async (req, res) => {
  * @access Private
  */
 export const logout = asyncHandler(async (req, res) => {
+  // Clear cookies
+  res.clearCookie('token');
+  res.clearCookie('myToken');
+  
   return res.status(200).json({
     success: true,
     message: SUCCESS_MESSAGES.LOGOUT_SUCCESS,

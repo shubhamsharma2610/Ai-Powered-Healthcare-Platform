@@ -46,9 +46,19 @@ export const authMiddleware = asyncHandler(async (req, res, next) => {
     });
   }
 
+  // ✅ FIXED: Attach user with consistent properties
   req.user = user;
   req.userId = decoded.userId;
   req.role = decoded.role;
+  
+  // ✅ ADD THIS: Also attach id for easy access
+  req.user.id = user._id; // Ensure id is available
+  
+  // // console.log('Auth middleware - User attached:', {
+  // //   id: req.user.id,
+  // //   role: req.role,
+  // //   email: user.email
+  // // });
 
   next();
 });
@@ -77,7 +87,7 @@ export const roleMiddleware = (...allowedRoles) => {
       }
       next();
     } catch (error) {
-      console.error('Role middleware error:', error);
+      // console.error('Role middleware error:', error);
       return res.status(500).json({
         success: false,
         message: 'Internal server error in role check'

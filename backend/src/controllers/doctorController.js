@@ -1,6 +1,3 @@
-// import Doctor from '../models/Doctor.js';
-// import User from '../models/User.js';
-
 import Doctor from '../models/Doctor.js';
 import User from '../models/User.js';
 import Appointment from '../models/Appointment.js';
@@ -50,7 +47,6 @@ export const getAllDoctors = async (req, res) => {
 
     // Search by name, specialization, or city
     if (search) {
-      // Need to search in User collection first for names
       const users = await User.find({
         fullName: { $regex: search, $options: 'i' },
         role: 'doctor'
@@ -79,7 +75,7 @@ export const getAllDoctors = async (req, res) => {
       Doctor.countDocuments(filter)
     ]);
 
-    // Get User data for all doctors (Doctor inherits from User)
+    // Get User data for all doctors
     const doctorIds = doctors.map(d => d._id);
     const users = await User.find({ _id: { $in: doctorIds } }).select('fullName email profilePicture');
     const userMap = new Map(users.map(u => [u._id.toString(), u]));
@@ -136,36 +132,48 @@ export const getAllDoctors = async (req, res) => {
  * @route   GET /api/doctors/:id
  * @access  Public
  */
+/**
+ * @desc    Get single doctor by ID
+ * @route   GET /api/doctors/:id
+ * @access  Public
+ */
 export const getDoctorById = async (req, res) => {
   try {
     const { id } = req.params;
-
-    // Find doctor by ID (discriminator uses the same _id as the User document)
+    
+    // ✅ ADD THIS VALIDATION - Check if ID is valid MongoDB ObjectId
+    const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(id);
+    
+    if (!isValidObjectId) {
+      return res.status(404).json({
+        success: false,
+        message: 'Doctor not found'
+      });
+    }
+    
     const doctor = await Doctor.findById(id);
-
+    
     if (!doctor) {
       return res.status(404).json({
         success: false,
         message: 'Doctor not found'
       });
     }
-
-    // Check if doctor is approved (optional - maybe show pending doctors to admin only)
+    
+    // Check if doctor is approved
     if (!doctor.isApproved) {
       return res.status(404).json({
         success: false,
         message: 'Doctor not found'
       });
     }
-
-    // Get the user record for the doctor to fetch name/email/profile picture
+    
     const user = await User.findById(doctor._id).select('fullName email profilePicture createdAt');
-
-    // Format response
+    
     const formattedDoctor = {
       id: String(doctor._id),
-      fullName: doctor.fullName || user?.fullName || 'Doctor Name',
-      email: doctor.email || user?.email || '',
+      fullName: user?.fullName || 'Doctor Name',
+      email: user?.email || '',
       profilePicture: doctor.profilePicture || user?.profilePicture || '',
       createdAt: doctor.createdAt || user?.createdAt,
       licenseNumber: doctor.licenseNumber,
@@ -183,19 +191,15 @@ export const getDoctorById = async (req, res) => {
       isApproved: doctor.isApproved,
       approvedAt: doctor.approvedAt
     };
-
-    // Increment view count (optional - if you want to track profile views)
-    // await Doctor.findByIdAndUpdate(doctor._id, { $inc: { profileViews: 1 } });
-
+    
     res.status(200).json({
       success: true,
       data: formattedDoctor
     });
-
+    
   } catch (error) {
     console.error('Get doctor by ID error:', error);
     
-    // Check if it's a mongoose invalid ID error
     if (error.name === 'CastError') {
       return res.status(404).json({
         success: false,
@@ -210,9 +214,8 @@ export const getDoctorById = async (req, res) => {
     });
   }
 };
-
 /**
- * @desc    Get doctor by specialization (for filtering)
+ * @desc    Get doctor by specialization
  * @route   GET /api/doctors/specializations/:specialization
  * @access  Public
  */
@@ -223,17 +226,24 @@ export const getDoctorsBySpecialization = async (req, res) => {
     const doctors = await Doctor.find({
       specialization: { $regex: new RegExp(`^${specialization}$`, 'i') },
       isApproved: true
-    }).populate('_id', 'fullName email profilePicture');
+    });
 
-    const formattedDoctors = doctors.map(doctor => ({
-      id: String(doctor._id?._id || doctor._id),
-      fullName: doctor._id.fullName,
-      specialization: doctor.specialization,
-      experience: doctor.experience,
-      consultationFee: doctor.consultationFee,
-      rating: doctor.rating,
-      profilePicture: doctor.profilePicture || doctor._id.profilePicture
-    }));
+    const doctorIds = doctors.map(d => d._id);
+    const users = await User.find({ _id: { $in: doctorIds } }).select('fullName profilePicture');
+    const userMap = new Map(users.map(u => [u._id.toString(), u]));
+
+    const formattedDoctors = doctors.map(doctor => {
+      const user = userMap.get(doctor._id.toString());
+      return {
+        id: String(doctor._id),
+        fullName: user?.fullName || 'Unknown',
+        specialization: doctor.specialization,
+        experience: doctor.experience,
+        consultationFee: doctor.consultationFee,
+        rating: doctor.rating,
+        profilePicture: doctor.profilePicture || user?.profilePicture || ''
+      };
+    });
 
     res.status(200).json({
       success: true,
@@ -273,23 +283,44 @@ export const getSpecializations = async (req, res) => {
   }
 };
 
-
-
- /* @desc    Get doctor profile (protected)
+/**
+ * @desc    Get doctor profile (protected)
+ * @route   GET /api/doctors/profile
+ * @access  Private (Doctor only)
+ */
+/**
+ * @desc    Get doctor profile (protected)
  * @route   GET /api/doctors/profile
  * @access  Private (Doctor only)
  */
 export const getDoctorProfile = async (req, res) => {
   try {
-    const doctor = await Doctor.findById(req.user.id)
+    // ✅ Use req.userId (set by auth middleware) instead of req.user.id
+    const userId = req.userId || req.user?._id;
+    
+    // console.log('Getting doctor profile for userId:', userId);
+    
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'User not authenticated' });
+    }
+    
+    const doctor = await Doctor.findById(userId)
       .populate('_id', 'fullName email profilePicture createdAt');
     
     if (!doctor) {
       return res.status(404).json({ success: false, message: 'Doctor not found' });
     }
     
-    res.json({ success: true, data: doctor });
+    res.json({ 
+      success: true, 
+      data: {
+        ...doctor.toObject(),
+        isProfileComplete: doctor.isProfileComplete,
+        status: doctor.status
+      }
+    });
   } catch (error) {
+    console.error('Get doctor profile error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -301,19 +332,111 @@ export const getDoctorProfile = async (req, res) => {
  */
 export const updateDoctorProfile = async (req, res) => {
   try {
-    const { phoneNumber, bio, clinicAddress, consultationFee } = req.body;
+    const { phoneNumber, bio, clinicAddress, consultationFee, qualifications, availability } = req.body;
     
-    const doctor = await Doctor.findByIdAndUpdate(
-      req.user.id,
-      { phoneNumber, bio, clinicAddress, consultationFee },
-      { new: true, runValidators: true }
-    ).populate('_id', 'fullName email');
+    const doctor = await Doctor.findById(req.user.id);
     
-    res.json({ success: true, data: doctor });
+    if (!doctor) {
+      return res.status(404).json({ success: false, message: 'Doctor not found' });
+    }
+    
+    // Update fields
+    if (phoneNumber !== undefined) doctor.phoneNumber = phoneNumber;
+    if (bio !== undefined) doctor.bio = bio;
+    if (consultationFee !== undefined) doctor.consultationFee = consultationFee;
+    if (clinicAddress !== undefined) doctor.clinicAddress = clinicAddress;
+    if (qualifications !== undefined) doctor.qualifications = qualifications;
+    if (availability !== undefined) doctor.availability = availability;
+    
+    // Reset rejection status if profile was rejected
+    if (doctor.isRejected) {
+      doctor.isRejected = false;
+      doctor.rejectionReason = '';
+      doctor.submittedForApproval = false;
+      doctor.status = 'pending';
+    }
+    
+    await doctor.save();
+    
+    res.json({ 
+      success: true, 
+      data: doctor,
+      message: 'Profile updated successfully'
+    });
   } catch (error) {
+    console.error('Update doctor profile error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+/**
+ * @desc    Submit doctor profile for approval
+ * @route   POST /api/doctors/submit-approval
+ * @access  Private (Doctor only)
+ */
+/**
+ * @desc    Submit doctor profile for approval
+ * @route   POST /api/doctors/submit-approval
+ * @access  Private (Doctor only)
+ */
+export const submitForApproval = async (req, res) => {
+  try {
+    const userId = req.userId || req.user?.id || req.user?._id;
+    
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'User not authenticated' });
+    }
+    
+    const doctor = await Doctor.findById(userId);
+    
+    if (!doctor) {
+      return res.status(404).json({ success: false, message: 'Doctor not found' });
+    }
+    
+    // Check if already approved
+    if (doctor.isApproved) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Your profile is already approved!' 
+      });
+    }
+    
+    // Check if already submitted
+    if (doctor.submittedForApproval) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Your profile is already pending approval.' 
+      });
+    }
+    
+    // Check if profile is complete
+    const isComplete = doctor.phoneNumber && 
+                       doctor.consultationFee > 0 && 
+                       doctor.bio && 
+                       doctor.clinicAddress?.street &&
+                       doctor.clinicAddress?.city;
+    
+    if (!isComplete) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Please complete your profile first' 
+      });
+    }
+    
+    doctor.submittedForApproval = true;
+    doctor.submittedAt = new Date();
+    await doctor.save();
+    
+    res.json({ 
+      success: true, 
+      message: 'Profile submitted for approval successfully!' 
+    });
+  } catch (error) {
+    console.error('Submit for approval error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 
 /**
  * @desc    Get doctor's appointments
@@ -359,7 +482,7 @@ export const getDoctorAppointments = async (req, res) => {
 };
 
 /**
- * @desc    Update appointment status (confirm, complete, cancel, no-show)
+ * @desc    Update appointment status
  * @route   PUT /api/doctors/appointments/:id/status
  * @access  Private (Doctor only)
  */
@@ -370,12 +493,10 @@ export const updateAppointmentStatus = async (req, res) => {
     
     const updateData = { status };
     
-    // ✅ If marking as completed, add completedAt timestamp
     if (status === 'completed') {
       updateData.completedAt = new Date();
     }
     
-    // ✅ If marking as no-show, add noShowAt timestamp
     if (status === 'no-show') {
       updateData.noShowAt = new Date();
     }
@@ -390,7 +511,6 @@ export const updateAppointmentStatus = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Appointment not found' });
     }
     
-    // ✅ If completed, update doctor's total consultations
     if (status === 'completed') {
       await Doctor.findByIdAndUpdate(req.user.id, {
         $inc: { totalConsultations: 1 }
@@ -405,7 +525,7 @@ export const updateAppointmentStatus = async (req, res) => {
 };
 
 /**
- * @desc    Get doctor's unique patients
+ * @desc    Get doctor's patients
  * @route   GET /api/doctors/patients
  * @access  Private (Doctor only)
  */
@@ -413,12 +533,10 @@ export const getDoctorPatients = async (req, res) => {
   try {
     const { search, page = 1, limit = 20 } = req.query;
     
-    // Get all appointments for this doctor
     const appointments = await Appointment.find({ doctorId: req.user.id })
       .populate('patientId', 'fullName email age gender phoneNumber')
       .sort({ createdAt: -1 });
     
-    // Get unique patients
     const patientMap = new Map();
     appointments.forEach(apt => {
       if (apt.patientId && !patientMap.has(apt.patientId._id.toString())) {
@@ -428,7 +546,6 @@ export const getDoctorPatients = async (req, res) => {
     
     let patients = Array.from(patientMap.values());
     
-    // Filter by search
     if (search) {
       patients = patients.filter(p => 
         p.fullName?.toLowerCase().includes(search.toLowerCase()) ||
@@ -436,7 +553,6 @@ export const getDoctorPatients = async (req, res) => {
       );
     }
     
-    // Pagination
     const start = (page - 1) * limit;
     const paginatedPatients = patients.slice(start, start + limit);
     
@@ -456,15 +572,24 @@ export const getDoctorPatients = async (req, res) => {
 };
 
 /**
- * @desc    Get doctor stats (for dashboard overview)
+ * @desc    Get doctor stats
  * @route   GET /api/doctors/stats
  * @access  Private (Doctor only)
  */
 export const getDoctorStats = async (req, res) => {
   try {
-    const doctorId = req.user.id;
+    // ✅ FIX: Use req.userId instead of req.user.id
+    const doctorId = req.userId || req.user?.id || req.user?._id;
     
-    // Get all appointments
+    if (!doctorId) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'User not authenticated' 
+      });
+    }
+    
+    // console.log('Fetching stats for doctorId:', doctorId);
+    
     const appointments = await Appointment.find({ doctorId });
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -480,18 +605,8 @@ export const getDoctorStats = async (req, res) => {
     const pendingAppointments = appointments.filter(apt => apt.status === 'pending');
     const noShowAppointments = appointments.filter(apt => apt.status === 'no-show');
     
-    // ✅ CRITICAL: Calculate earnings ONLY from COMPLETED appointments
-    const totalEarnings = completedAppointments.reduce((sum, apt) => sum + apt.amount, 0);
+    const totalEarnings = completedAppointments.reduce((sum, apt) => sum + (apt.amount || apt.fee || 0), 0);
     
-    // ✅ Alternative: If you have payments collection, use that (more reliable)
-    // const payments = await Payment.find({ 
-    //   doctorId, 
-    //   status: 'success',
-    //   appointmentId: { $in: completedAppointments.map(a => a._id) }
-    // });
-    // const totalEarnings = payments.reduce((sum, p) => sum + p.amount, 0);
-    
-    // Unique patients count (from completed appointments only)
     const uniquePatients = new Set(
       completedAppointments.map(apt => apt.patientId?.toString())
     ).size;
@@ -506,7 +621,7 @@ export const getDoctorStats = async (req, res) => {
         pendingAppointments: pendingAppointments.length,
         noShowAppointments: noShowAppointments.length,
         totalPatients: uniquePatients,
-        totalEarnings,  // ✅ Only from completed appointments
+        totalEarnings,
         recentAppointments: appointments.slice(0, 5)
       }
     });
@@ -517,7 +632,7 @@ export const getDoctorStats = async (req, res) => {
 };
 
 /**
- * @desc    Get doctor's schedule/availability
+ * @desc    Get doctor's schedule
  * @route   GET /api/doctors/schedule
  * @access  Private (Doctor only)
  */
@@ -531,7 +646,7 @@ export const getDoctorSchedule = async (req, res) => {
 };
 
 /**
- * @desc    Update doctor's schedule/availability
+ * @desc    Update doctor's schedule
  * @route   PUT /api/doctors/schedule
  * @access  Private (Doctor only)
  */
@@ -551,10 +666,8 @@ export const updateDoctorSchedule = async (req, res) => {
   }
 };
 
-
-
 /**
- * @desc    Get doctor's schedule by ID (Public - for patients)
+ * @desc    Get doctor's schedule by ID (Public)
  * @route   GET /api/doctors/:id/schedule
  * @access  Public
  */
@@ -575,11 +688,8 @@ export const getDoctorScheduleById = async (req, res) => {
   }
 };
 
-
-
-
 /**
- * @desc    Get doctor profile for public viewing (patients)
+ * @desc    Get public doctor profile
  * @route   GET /api/doctors/public/:id
  * @access  Public
  */
@@ -587,17 +697,14 @@ export const getPublicDoctorById = async (req, res) => {
   try {
     const { id } = req.params;
     
-    // Find doctor by ID
     const doctor = await Doctor.findById(id);
     
     if (!doctor || !doctor.isApproved) {
       return res.status(404).json({ success: false, message: 'Doctor not found' });
     }
     
-    // Get user data (name, email, profile picture)
     const user = await User.findById(doctor._id).select('fullName email profilePicture');
     
-    // Format response for public viewing
     const formattedDoctor = {
       id: String(doctor._id),
       fullName: user?.fullName || 'Doctor',

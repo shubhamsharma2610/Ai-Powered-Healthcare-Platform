@@ -4,6 +4,7 @@ import AdminSidebar from "./components/AdminSidebar";
 import AdminHeader from "./components/AdminHeader";
 import { useState } from "react";
 
+
 export default function AdminLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -17,7 +18,7 @@ export default function AdminLayout() {
         />
       )}
       
-      {/* Sidebar - Hidden on mobile, show when open */}
+      {/* Sidebar - Desktop always visible, mobile drawer */}
       <div className={`
         fixed lg:relative z-50 h-full transition-transform duration-300
         ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
@@ -25,8 +26,8 @@ export default function AdminLayout() {
         <AdminSidebar onClose={() => setMobileMenuOpen(false)} />
       </div>
       
-      {/* Right Section */}
-      <div className="flex-1 flex flex-col overflow-hidden w-full">
+      {/* Right Section - Add margin-left on desktop to prevent overlap */}
+      <div className="flex-1 flex flex-col overflow-hidden w-full lg:ml-64">
         <AdminHeader onMenuClick={() => setMobileMenuOpen(true)} />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           <Outlet />

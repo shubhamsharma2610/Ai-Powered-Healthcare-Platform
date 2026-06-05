@@ -13,29 +13,39 @@ import {
   getDoctorSchedule,
   updateDoctorSchedule,
   getDoctorScheduleById,
-  getPublicDoctorById
+  getPublicDoctorById,
+  submitForApproval
 } from '../controllers/doctorController.js';
 import { authMiddleware, roleMiddleware } from '../middleware/authMiddleware.js';
 
 const router = Router();
-router.get('/', getAllDoctors);
+
+// ============ PUBLIC ROUTES (No authentication) ============
 router.get('/specializations', getSpecializations);
+router.get('/public/:id', getPublicDoctorById);
 router.get('/specializations/:specialization', getDoctorsBySpecialization);
 router.get('/:id/schedule', getDoctorScheduleById);
-router.get('/public/:id', getPublicDoctorById);  // 👈 Patient sees doctor profile
+router.get('/', getAllDoctors);
 
 // ============ PROTECTED ROUTES (Doctor only) ============
+// These routes MUST come AFTER public routes
 router.use(authMiddleware);
-router.use(roleMiddleware(['doctor']));
+router.use(roleMiddleware('doctor'));
 
+// Profile routes
 router.get('/profile', getDoctorProfile);
 router.put('/profile', updateDoctorProfile);
+router.post('/submit-approval', submitForApproval);
+
+// Stats and Appointments
 router.get('/stats', getDoctorStats);
 router.get('/appointments', getDoctorAppointments);
 router.put('/appointments/:id/status', updateAppointmentStatus);
+
+// Patients and Schedule
 router.get('/patients', getDoctorPatients);
 router.get('/schedule', getDoctorSchedule);
 router.put('/schedule', updateDoctorSchedule);
-router.get('/:id', getDoctorById);  // 👈 Doctor viewing their own profile
+router.get('/:id', getDoctorById);
 
 export default router;

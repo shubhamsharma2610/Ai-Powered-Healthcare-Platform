@@ -36,6 +36,7 @@ import DoctorDashboard from './features/doctor/pages/DoctorDashboard';
 import AdminOverview from './features/admin/pages/Overview';
 import AdminDoctors from './features/admin/pages/Doctors';
 import AdminRequests from './features/admin/pages/Requests';
+import AdminPatients from './features/admin/pages/AdminPatients';  
 
 const ProtectedRoute = ({ isAuthenticated }) => {
   if (!isAuthenticated) {
@@ -63,6 +64,7 @@ const AppRoutes = () => {
         <Route element={<AdminLayout />}>
           <Route path="/admin" element={<AdminOverview />} />
           <Route path="/admin/doctors" element={<AdminDoctors />} />
+            <Route path="/admin/patients" element={<AdminPatients />} /> 
           <Route path="/admin/requests" element={<AdminRequests />} />
         </Route>
       </Route>
