@@ -245,7 +245,7 @@ export default function AppointmentsSection() {
           {filteredAppointments?.map((apt) => {
             const appointmentState = getAppointmentState(apt);
             const doctorName = apt.doctorId?.fullName || 'Doctor';
-            const displayName = `Dr. ${doctorName}`;
+            const displayName = `${doctorName}`;
             const doctorSpecialty = apt.doctorId?.specialization || 'General Physician';
             const date = new Date(apt.date).toLocaleDateString('en-IN', {
               day: 'numeric',

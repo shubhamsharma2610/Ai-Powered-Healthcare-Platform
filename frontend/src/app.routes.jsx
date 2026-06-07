@@ -4,7 +4,7 @@ import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import MainLayout from './components/layout/MainLayout.jsx';
 import AuthLayout from './components/layout/AuthLayout.jsx';
 import AdminLayout from './features/admin/AdminLayout.jsx';
-
+import { useSelector } from 'react-redux';
 // Public Pages
 import HomePage from './features/home/pages/HomePage.jsx';
 import Login from './features/auth/pages/Login';
@@ -31,67 +31,142 @@ import BookingPage from './features/find-doctors/pages/BookingPage.jsx';
 
 // Doctor Pages
 import DoctorDashboard from './features/doctor/pages/DoctorDashboard';
-
+import DoctorAppointments from './features/doctor/components/DoctorAppointmentsSection';
+import DoctorPatients from './features/doctor/components/DoctorPatientsSection';
+import DoctorSchedule from './features/doctor/components/DoctorScheduleSection';
+import DoctorProfileSection from './features/doctor/components/DoctorProfileSection';
 // Admin Pages
 import AdminOverview from './features/admin/pages/Overview';
 import AdminDoctors from './features/admin/pages/Doctors';
 import AdminRequests from './features/admin/pages/Requests';
 import AdminPatients from './features/admin/pages/AdminPatients';  
 
-const ProtectedRoute = ({ isAuthenticated }) => {
+
+const RoleBasedRoute = ({ children, allowedRoles = [] }) => {
+  const { user, isAuthenticated } = useSelector((state) => state.auth);
+  
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
-  return <Outlet />;
+  
+  if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
+    // Redirect to appropriate dashboard
+    if (user?.role === 'patient') {
+      return <Navigate to="/patient/dashboard" replace />;
+    }
+    if (user?.role === 'doctor') {
+      return <Navigate to="/doctor/dashboard" replace />;
+    }
+    if (user?.role === 'admin') {
+      return <Navigate to="/admin" replace />;
+    }
+    return <Navigate to="/" replace />;
+  }
+  
+  return children;
 };
 
-const AdminProtectedRoute = ({ isAuthenticated }) => {
-  const isAdmin = true; // localStorage.getItem("admin_role") === "admin"
-  if (!isAdmin) {
+const AdminRoute = ({ children }) => {
+  const { user, isAuthenticated } = useSelector((state) => state.auth);
+  
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
-  return <Outlet />;
+  
+  if (user?.role !== 'admin') {
+    if (user?.role === 'patient') {
+      return <Navigate to="/patient/dashboard" replace />;
+    }
+    if (user?.role === 'doctor') {
+      return <Navigate to="/doctor/dashboard" replace />;
+    }
+    return <Navigate to="/" replace />;
+  }
+  
+  return children;
+};
+
+const RoleBasedRedirect = () => {
+  const { user, isAuthenticated } = useSelector((state) => state.auth);
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+  
+  if (user?.role === 'patient') {
+    return <Navigate to="/patient/dashboard" replace />;
+  }
+  if (user?.role === 'doctor') {
+    return <Navigate to="/doctor/dashboard" replace />;
+  }
+  if (user?.role === 'admin') {
+    return <Navigate to="/admin" replace />;
+  }
+  
+  return <Navigate to="/" replace />;
 };
 
 const AppRoutes = () => {
-  const isAuth = true;
-
   return (
     <Routes>
-
       {/* ==================== ADMIN ROUTES ==================== */}
-      <Route element={<AdminProtectedRoute />}>
-        <Route element={<AdminLayout />}>
-          <Route path="/admin" element={<AdminOverview />} />
-          <Route path="/admin/doctors" element={<AdminDoctors />} />
-            <Route path="/admin/patients" element={<AdminPatients />} /> 
-          <Route path="/admin/requests" element={<AdminRequests />} />
-        </Route>
+      <Route 
+        path="/admin" 
+        element={
+          <AdminRoute>
+            <AdminLayout />
+          </AdminRoute>
+        }
+      >
+        <Route index element={<AdminOverview />} />
+        <Route path="doctors" element={<AdminDoctors />} />
+        <Route path="patients" element={<AdminPatients />} />
+        <Route path="requests" element={<AdminRequests />} />
       </Route>
 
-      {/* ==================== PATIENT & DOCTOR DASHBOARDS ==================== */}
-      <Route element={<ProtectedRoute isAuthenticated={isAuth} />}>
-        <Route path="/patient/dashboard" element={<PatientDashboard />} />
-        <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
-        {/* ✅ Add Patient Appointments Route */}
-        <Route path="/patient/appointments" element={<div>My Appointments Page</div>} />
+      {/* ==================== PATIENT ROUTES ==================== */}
+      <Route 
+        path="/patient" 
+        element={
+          <RoleBasedRoute allowedRoles={['patient']}>
+            <Outlet />
+          </RoleBasedRoute>
+        }
+      >
+        <Route path="dashboard" element={<PatientDashboard />} />
+        <Route path="edit-profile" element={<EditProfile />} />
+        <Route path="profile-setup" element={<PatientProfileSetup />} />
+        {/* Add these routes when files are created */}
+        {/* <Route path="appointments" element={<PatientAppointments />} /> */}
+        {/* <Route path="profile" element={<PatientProfile />} /> */}
       </Route>
 
-      {/* ==================== PUBLIC ROUTES (with Navbar/Footer) ==================== */}
+      {/* ==================== DOCTOR ROUTES ==================== */}
+      <Route 
+        path="/doctor" 
+        element={
+          <RoleBasedRoute allowedRoles={['doctor']}>
+            <Outlet />
+          </RoleBasedRoute>
+        }
+      >
+        <Route path="dashboard" element={<DoctorDashboard />} />
+        <Route path="appointments" element={<DoctorAppointments />} />
+        <Route path="patients" element={<DoctorPatients />} />
+        <Route path="schedule" element={<DoctorSchedule />} />
+        <Route path="profile" element={<DoctorProfileSection />} />
+      </Route>
+
+      {/* ==================== PUBLIC ROUTES ==================== */}
       <Route element={<MainLayout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/services" element={<Services />} />
-         <Route path="/about-us" element={<AboutUsPage />} />
-        
-        {/* ✅ Fixed: Find Doctors Routes */}
+        <Route path="/about-us" element={<AboutUsPage />} />
         <Route path="/find-doctors" element={<FindDoctorsPage />} />
         <Route path="/doctor/:id" element={<DoctorProfilePage />} />
         <Route path="/doctor/:id/book" element={<BookingPage />} />
-        
         <Route path="/ai-upload-report" element={<AiUploadReport />} />
         <Route path="/ai-result-upload" element={<AIResultPage />} />
-        <Route path="/patient/profile-setup" element={<PatientProfileSetup />} />
-        <Route path="/patient/edit-profile" element={<EditProfile />} />
       </Route>
 
       {/* ==================== AUTH ROUTES ==================== */}
@@ -100,6 +175,9 @@ const AppRoutes = () => {
         <Route path="/signup" element={<Register />} />
       </Route>
 
+      {/* ==================== REDIRECTS ==================== */}
+      <Route path="/redirect" element={<RoleBasedRedirect />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };

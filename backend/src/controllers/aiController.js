@@ -146,7 +146,7 @@ export const analyzeReport = async (req, res) => {
       
       const result = await model.generateContent(prompt);
       const responseText = result.response.text();
-      console.log('PDF Analysis Response:', responseText);
+      // console.log('PDF Analysis Response:', responseText);
       
       const cleanJson = cleanJsonResponse(responseText);
       analysis = JSON.parse(cleanJson);
@@ -201,7 +201,7 @@ Now analyze this medical report image:`;
       
       const result = await model.generateContent([prompt, imagePart]);
       const responseText = result.response.text();
-      console.log('Image Analysis Raw Response:', responseText);
+      // console.log('Image Analysis Raw Response:', responseText);
       
       // Clean and parse JSON
       const cleanJson = cleanJsonResponse(responseText);
