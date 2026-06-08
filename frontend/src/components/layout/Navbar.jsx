@@ -64,8 +64,9 @@ const Navbar = () => {
 
   const getDashboardLinks = () => {
     if (!isAuthenticated) return [];
+    const normalizedRole = role?.toLowerCase?.();
     
-    if (role === 'patient') {
+    if (normalizedRole === 'patient') {
       return [
         { to: '/patient/dashboard', label: 'Dashboard', icon: LayoutDashboard }
         // { to: '/patient/appointments', label: 'My Appointments', icon: Calendar },
@@ -73,7 +74,7 @@ const Navbar = () => {
       ];
     }
     
-    if (role === 'doctor') {
+    if (normalizedRole === 'doctor') {
       return [
         { to: '/doctor/dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { to: '/doctor/appointments', label: 'Appointments', icon: Calendar },
@@ -82,7 +83,7 @@ const Navbar = () => {
       ];
     }
     
-    if (role === 'admin') {
+    if (normalizedRole === 'admin') {
       return [
         { to: '/admin', label: 'Dashboard', icon: LayoutDashboard },
         { to: '/admin/doctors', label: 'Doctors', icon: Stethoscope },
@@ -99,7 +100,7 @@ const Navbar = () => {
   // ✅ Get the correct dashboard URL for the role
   const getDashboardUrl = () => {
     if (role === 'patient') return '/patient/dashboard';
-    if (role === 'Doctor') return '/doctor/dashboard';
+    if (role?.toLowerCase() === 'doctor') return '/doctor/dashboard';
     if (role === 'admin') return '/admin';
     return '/';
   };

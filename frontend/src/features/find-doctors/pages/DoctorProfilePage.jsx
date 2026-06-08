@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchDoctorById, clearSelectedDoctor } from '../../../redux/slices/doctorSlice'; // ✅ ADDED MISSING IMPORTS
-import { MapPin, Clock, DollarSign, Star, Briefcase, Award, ChevronLeft, Calendar } from 'lucide-react';
+import { fetchDoctorById, clearSelectedDoctor } from '../../../redux/slices/doctorSlice';
+import { MapPin, Clock, DollarSign, Star, Briefcase, Award, ChevronLeft, Calendar, CheckCircle } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 
-const API_URL = import.meta.env.VITE_BACKEND_BASE_URL || 'http://localhost:5000/api';
+// ✅ FIXED: Use VITE_BACKEND_BASE_URL instead of BAS
+const API_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:5000/api';
 
 export default function DoctorProfilePage() {
   const { id } = useParams();
@@ -21,8 +22,8 @@ export default function DoctorProfilePage() {
   const [loadingSchedule, setLoadingSchedule] = useState(false);
   const [availableTimeSlots, setAvailableTimeSlots] = useState([]);
 
-  // ✅ Now fetchDoctorById is defined
   useEffect(() => {
+    console.log('API_URL being used:', API_URL); // Debug log
     dispatch(fetchDoctorById(id));
     return () => {
       dispatch(clearSelectedDoctor());
@@ -48,6 +49,8 @@ export default function DoctorProfilePage() {
       setLoadingSchedule(false);
     }
   };
+
+  // ... rest of your functions remain the same ...
 
   const isDateAvailable = (date) => {
     if (!doctorSchedule.length) return true;
@@ -117,6 +120,17 @@ export default function DoctorProfilePage() {
     return today.toISOString().split('T')[0];
   };
 
+  const getProfilePicture = () => {
+    return selectedDoctor?.documents?.profilePhoto || 
+           selectedDoctor?.profilePicture || 
+           null;
+  };
+
+  const getInitials = (name) => {
+    if (!name) return 'D';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -141,6 +155,7 @@ export default function DoctorProfilePage() {
     );
   }
 
+  const profilePhoto = getProfilePicture();
   const doctorFullName = selectedDoctor?.fullName || selectedDoctor?._id?.fullName || selectedDoctor?.name || 'Doctor Name';
   const doctorSpecialization = selectedDoctor?.specialization || 'Specialist';
   const doctorRating = selectedDoctor?.rating || 4.5;
@@ -149,6 +164,7 @@ export default function DoctorProfilePage() {
   const doctorBio = selectedDoctor?.bio || 'Experienced doctor dedicated to providing quality healthcare.';
   const doctorQualifications = selectedDoctor?.qualifications || [];
   const doctorClinicAddress = selectedDoctor?.clinicAddress || {};
+  const isApproved = selectedDoctor?.isApproved || false;
 
   return (
     <div className="min-h-screen bg-surface-soft py-8">
@@ -163,11 +179,33 @@ export default function DoctorProfilePage() {
         <div className="bg-white rounded-medical shadow-card overflow-hidden">
           <div className="bg-primary-50 px-6 py-5">
             <div className="flex flex-col md:flex-row gap-5">
-              <div className="w-24 h-24 rounded-full bg-primary-100 flex items-center justify-center text-4xl">
-                👨‍⚕️
-              </div>
+              {profilePhoto ? (
+                <img 
+                  src={profilePhoto} 
+                  alt={doctorFullName}
+                  className="w-24 h-24 rounded-full object-cover border-4 border-white shadow"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.style.display = 'none';
+                    const parent = e.target.parentElement;
+                    if (parent) {
+                      parent.innerHTML = `<div class="w-24 h-24 rounded-full bg-primary/20 flex items-center justify-center text-primary text-3xl font-bold">${getInitials(doctorFullName)}</div>`;
+                    }
+                  }}
+                />
+              ) : (
+                <div className="w-24 h-24 rounded-full bg-primary/20 flex items-center justify-center text-primary text-3xl font-bold">
+                  {getInitials(doctorFullName)}
+                </div>
+              )}
+              
               <div className="flex-1">
-                <h1 className="text-xl font-bold text-gray-900 font-display">{doctorFullName}</h1>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-xl font-bold text-gray-900 font-display">Dr. {doctorFullName}</h1>
+                  {isApproved && (
+                    <CheckCircle size={18} className="text-green-500" />
+                  )}
+                </div>
                 <p className="text-sm text-primary capitalize">{doctorSpecialization}</p>
                 <div className="flex flex-wrap gap-4 mt-2">
                   <div className="flex items-center gap-1 text-sm text-gray-600">
@@ -180,6 +218,7 @@ export default function DoctorProfilePage() {
                   </div>
                 </div>
               </div>
+              
               <div className="text-right">
                 <div className="inline-block bg-primary-50 rounded-medical px-4 py-2">
                   <p className="text-xs text-gray-500">Consultation Fee</p>
@@ -189,6 +228,7 @@ export default function DoctorProfilePage() {
             </div>
           </div>
 
+          {/* Rest of your JSX remains the same */}
           <div className="p-6 space-y-5">
             <div>
               <h2 className="text-md font-semibold text-gray-800 mb-1">About</h2>
@@ -202,7 +242,7 @@ export default function DoctorProfilePage() {
                 </h2>
                 <div className="space-y-1">
                   {doctorQualifications.map((qual, idx) => (
-                    <p key={idx} className="text-sm text-gray-500">• {qual.degree} from {qual.institution}</p>
+                    <p key={idx} className="text-sm text-gray-500">• {qual.degree} from {qual.institution} ({qual.year})</p>
                   ))}
                 </div>
               </div>
@@ -215,7 +255,9 @@ export default function DoctorProfilePage() {
                 </h2>
                 <p className="text-sm text-gray-500">
                   {doctorClinicAddress.street && `${doctorClinicAddress.street}, `}
-                  {doctorClinicAddress.city}
+                  {doctorClinicAddress.city && `${doctorClinicAddress.city}, `}
+                  {doctorClinicAddress.state && `${doctorClinicAddress.state} - `}
+                  {doctorClinicAddress.zipCode}
                 </p>
               </div>
             )}

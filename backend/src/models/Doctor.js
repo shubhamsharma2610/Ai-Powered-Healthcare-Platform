@@ -66,7 +66,7 @@ const doctorSchema = new mongoose.Schema(
     ],
     profilePicture: {
       type: String,
-      default: '' // Empty string means no image uploaded yet
+      default: ''
     },
     bio: {
       type: String,
@@ -94,46 +94,49 @@ const doctorSchema = new mongoose.Schema(
       }
     ],
 
+    // ========== DOCUMENTS SECTION (NEW) ==========
+    documents: {
+      profilePhoto: { type: String, default: '' },      // Profile picture URL
+      aadharCard: { type: String, default: '' },        // Aadhar card URL
+      panCard: { type: String, default: '' },           // PAN card URL
+      medicalDegree: { type: String, default: '' },     // MBBS degree URL
+      upiId: { type: String, default: '' }              // ✅ UPI ID for payments
+    },
+    // =============================================
+
     // ========== APPROVAL WORKFLOW FIELDS ==========
     isApproved: {
       type: Boolean,
       default: false
     },
     
-    // ✅ NEW: Flag to track if doctor has submitted profile for approval
     submittedForApproval: {
       type: Boolean,
       default: false
     },
     
-    // ✅ NEW: Flag to track if doctor is rejected
     isRejected: {
       type: Boolean,
       default: false
     },
     
-    // When doctor submitted for approval
     submittedAt: {
       type: Date
     },
     
-    // When admin approved the doctor
     approvedAt: {
       type: Date
     },
     
-    // When admin rejected the doctor
     rejectedAt: {
       type: Date
     },
     
-    // Reason for rejection (if rejected)
     rejectionReason: {
       type: String,
       default: ''
     },
     
-    // ✅ NEW: Current status for easier querying
     status: {
       type: String,
       enum: ['pending', 'submitted', 'active', 'rejected'],
@@ -147,11 +150,11 @@ const doctorSchema = new mongoose.Schema(
 // Indexes for faster queries
 doctorSchema.index({ specialization: 1 });
 doctorSchema.index({ isApproved: 1 });
-doctorSchema.index({ submittedForApproval: 1 }); // ✅ For filtering pending approvals
+doctorSchema.index({ submittedForApproval: 1 });
 doctorSchema.index({ consultationFee: 1 });
-doctorSchema.index({ status: 1 }); // ✅ For quick status filtering
+doctorSchema.index({ status: 1 });
 
-// ✅ Virtual to check if profile is complete
+// ✅ UPDATED Virtual to check if profile is complete (including documents)
 doctorSchema.virtual('isProfileComplete').get(function() {
   return !!(this.phoneNumber && 
             this.consultationFee > 0 && 
@@ -160,10 +163,13 @@ doctorSchema.virtual('isProfileComplete').get(function() {
             this.clinicAddress?.city &&
             this.clinicAddress?.state &&
             this.clinicAddress?.zipCode &&
-            this.clinicAddress?.country);
+            this.clinicAddress?.country &&
+            this.documents?.aadharCard &&      // ✅ Mandatory
+            this.documents?.panCard &&         // ✅ Mandatory
+            this.documents?.medicalDegree);    // ✅ Mandatory
 });
 
-// ✅ Method to submit for approval
+// ✅ Method to submit for approval (updated with document check)
 doctorSchema.methods.submitForApproval = function() {
   if (this.isProfileComplete && !this.isApproved && !this.submittedForApproval) {
     this.submittedForApproval = true;
@@ -195,6 +201,15 @@ doctorSchema.methods.reject = function(reason = '') {
   this.rejectionReason = reason || 'Profile does not meet requirements';
   this.status = 'rejected';
   return true;
+};
+
+// ✅ Method to get missing documents
+doctorSchema.methods.getMissingDocuments = function() {
+  const missing = [];
+  if (!this.documents?.aadharCard) missing.push('Aadhar Card');
+  if (!this.documents?.panCard) missing.push('PAN Card');
+  if (!this.documents?.medicalDegree) missing.push('Medical Degree');
+  return missing;
 };
 
 // Ensure virtuals are included in JSON output

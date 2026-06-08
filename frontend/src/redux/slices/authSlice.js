@@ -67,11 +67,14 @@ const getInitialAuthState = () => {
   // So we check if we have user data or rely on backend
   const userStr = localStorage.getItem('user'); // Only store user data, NOT token
   const user = userStr ? JSON.parse(userStr) : null;
+  const normalizedUser = user
+    ? { ...user, role: user.role?.toLowerCase?.() || user.role }
+    : null;
   
   return {
-    user: user,
-    isAuthenticated: !!user,  // If we have user data, assume authenticated
-    role: user?.role || null,
+    user: normalizedUser,
+    isAuthenticated: !!normalizedUser,  // If we have user data, assume authenticated
+    role: normalizedUser?.role || null,
     isLoading: false,
     error: null,
   };
@@ -101,11 +104,14 @@ const authSlice = createSlice({
       state.error = null;
     },
     setUser: (state, action) => {
-      state.user = action.payload;
-      state.isAuthenticated = !!action.payload;
-      state.role = action.payload?.role || null;
-      if (action.payload) {
-        localStorage.setItem('user', JSON.stringify(action.payload));
+      const normalizedUser = action.payload
+        ? { ...action.payload, role: action.payload.role?.toLowerCase?.() || action.payload.role }
+        : null;
+      state.user = normalizedUser;
+      state.isAuthenticated = !!normalizedUser;
+      state.role = normalizedUser?.role || null;
+      if (normalizedUser) {
+        localStorage.setItem('user', JSON.stringify(normalizedUser));
       }
     },
   },
@@ -119,10 +125,14 @@ const authSlice = createSlice({
       .addCase(login.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isAuthenticated = true;
-        state.user = action.payload.user;
-        state.role = action.payload.user?.role;
+        const normalizedUser = {
+          ...action.payload.user,
+          role: action.payload.user?.role?.toLowerCase?.() || action.payload.user?.role,
+        };
+        state.user = normalizedUser;
+        state.role = normalizedUser.role;
         // Store only user data, NOT token (token is in HTTP-only cookie)
-        localStorage.setItem('user', JSON.stringify(action.payload.user));
+        localStorage.setItem('user', JSON.stringify(normalizedUser));
       })
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false;
@@ -140,9 +150,13 @@ const authSlice = createSlice({
       .addCase(register.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isAuthenticated = true;
-        state.user = action.payload.user;
-        state.role = action.payload.user?.role;
-        localStorage.setItem('user', JSON.stringify(action.payload.user));
+        const normalizedUser = {
+          ...action.payload.user,
+          role: action.payload.user?.role?.toLowerCase?.() || action.payload.user?.role,
+        };
+        state.user = normalizedUser;
+        state.role = normalizedUser.role;
+        localStorage.setItem('user', JSON.stringify(normalizedUser));
       })
       .addCase(register.rejected, (state, action) => {
         state.isLoading = false;
@@ -159,9 +173,13 @@ const authSlice = createSlice({
       .addCase(fetchCurrentUser.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isAuthenticated = true;
-        state.user = action.payload.user;
-        state.role = action.payload.user?.role;
-        localStorage.setItem('user', JSON.stringify(action.payload.user));
+        const normalizedUser = {
+          ...action.payload.user,
+          role: action.payload.user?.role?.toLowerCase?.() || action.payload.user?.role,
+        };
+        state.user = normalizedUser;
+        state.role = normalizedUser.role;
+        localStorage.setItem('user', JSON.stringify(normalizedUser));
       })
       .addCase(fetchCurrentUser.rejected, (state) => {
         state.isLoading = false;

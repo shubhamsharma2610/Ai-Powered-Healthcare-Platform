@@ -14,9 +14,12 @@ import {
   updateDoctorSchedule,
   getDoctorScheduleById,
   getPublicDoctorById,
-  submitForApproval
+  submitForApproval,
+  uploadDocument
 } from '../controllers/doctorController.js';
 import { authMiddleware, roleMiddleware } from '../middleware/authMiddleware.js';
+
+import { upload, handleUploadError } from '../middleware/uploadMiddleware.js';
 
 const router = Router();
 
@@ -36,7 +39,15 @@ router.use(roleMiddleware('doctor'));
 router.get('/profile', getDoctorProfile);
 router.put('/profile', updateDoctorProfile);
 router.post('/submit-approval', submitForApproval);
-
+// router.post('/upload-document', upload.single('document'), handleUploadError, uploadDocument);
+router.post(
+  '/upload-document',
+  authMiddleware,
+  roleMiddleware('doctor'),
+  upload.single('document'),
+  handleUploadError,
+  uploadDocument
+);
 // Stats and Appointments
 router.get('/stats', getDoctorStats);
 router.get('/appointments', getDoctorAppointments);

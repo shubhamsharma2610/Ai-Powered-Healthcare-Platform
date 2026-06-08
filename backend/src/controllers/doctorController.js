@@ -1,8 +1,12 @@
+import dotenv from 'dotenv';
+dotenv.config();
 import Doctor from '../models/Doctor.js';
 import User from '../models/User.js';
 import Appointment from '../models/Appointment.js';
 import Payment from '../models/Payment.js';
 
+
+const BASE_URL = process.env.BASE_URL || 'http://localhost:3001';
 /**
  * @desc    Get all approved doctors with filtering and pagination
  * @route   GET /api/doctors
@@ -22,30 +26,24 @@ export const getAllDoctors = async (req, res) => {
       sortOrder = 'desc'
     } = req.query;
 
-    // Build filter object
     const filter = { isApproved: true };
 
-    // Filter by specialization
     if (specialization) {
       filter.specialization = specialization;
     }
 
-    // Filter by minimum experience
     if (minExperience) {
       filter.experience = { $gte: parseInt(minExperience) };
     }
 
-    // Filter by consultation fee range
     if (maxFee) {
       filter.consultationFee = { $lte: parseInt(maxFee) };
     }
 
-    // Filter by minimum rating
     if (minRating) {
       filter.rating = { $gte: parseFloat(minRating) };
     }
 
-    // Search by name, specialization, or city
     if (search) {
       const users = await User.find({
         fullName: { $regex: search, $options: 'i' },
@@ -61,12 +59,10 @@ export const getAllDoctors = async (req, res) => {
       ];
     }
 
-    // Pagination
     const skip = (page - 1) * limit;
     const sortOptions = {};
     sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
-    // Execute queries in parallel
     const [doctors, totalCount] = await Promise.all([
       Doctor.find(filter)
         .sort(sortOptions)
@@ -75,19 +71,18 @@ export const getAllDoctors = async (req, res) => {
       Doctor.countDocuments(filter)
     ]);
 
-    // Get User data for all doctors
     const doctorIds = doctors.map(d => d._id);
     const users = await User.find({ _id: { $in: doctorIds } }).select('fullName email profilePicture');
     const userMap = new Map(users.map(u => [u._id.toString(), u]));
 
-    // Format response
     const formattedDoctors = doctors.map(doctor => {
       const user = userMap.get(doctor._id.toString());
       return {
         id: String(doctor._id),
         fullName: user?.fullName || 'Unknown',
         email: user?.email || '',
-        profilePicture: doctor.profilePicture || user?.profilePicture || '',
+        // ✅ FIX: Get profile picture from documents.profilePhoto first, then doctor.profilePicture, then user.profilePicture
+        profilePicture: doctor.documents?.profilePhoto || doctor.profilePicture || user?.profilePicture || '',
         specialization: doctor.specialization,
         experience: doctor.experience,
         consultationFee: doctor.consultationFee,
@@ -98,7 +93,9 @@ export const getAllDoctors = async (req, res) => {
         bio: doctor.bio,
         phoneNumber: doctor.phoneNumber,
         availability: doctor.availability,
-        isApproved: doctor.isApproved
+        isApproved: doctor.isApproved,
+        // ✅ Also send documents for any other needs
+        documents: doctor.documents || {}
       };
     });
 
@@ -132,16 +129,10 @@ export const getAllDoctors = async (req, res) => {
  * @route   GET /api/doctors/:id
  * @access  Public
  */
-/**
- * @desc    Get single doctor by ID
- * @route   GET /api/doctors/:id
- * @access  Public
- */
 export const getDoctorById = async (req, res) => {
   try {
     const { id } = req.params;
     
-    // ✅ ADD THIS VALIDATION - Check if ID is valid MongoDB ObjectId
     const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(id);
     
     if (!isValidObjectId) {
@@ -160,7 +151,6 @@ export const getDoctorById = async (req, res) => {
       });
     }
     
-    // Check if doctor is approved
     if (!doctor.isApproved) {
       return res.status(404).json({
         success: false,
@@ -214,6 +204,7 @@ export const getDoctorById = async (req, res) => {
     });
   }
 };
+
 /**
  * @desc    Get doctor by specialization
  * @route   GET /api/doctors/specializations/:specialization
@@ -288,17 +279,9 @@ export const getSpecializations = async (req, res) => {
  * @route   GET /api/doctors/profile
  * @access  Private (Doctor only)
  */
-/**
- * @desc    Get doctor profile (protected)
- * @route   GET /api/doctors/profile
- * @access  Private (Doctor only)
- */
 export const getDoctorProfile = async (req, res) => {
   try {
-    // ✅ Use req.userId (set by auth middleware) instead of req.user.id
     const userId = req.userId || req.user?._id;
-    
-    // console.log('Getting doctor profile for userId:', userId);
     
     if (!userId) {
       return res.status(401).json({ success: false, message: 'User not authenticated' });
@@ -311,10 +294,20 @@ export const getDoctorProfile = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Doctor not found' });
     }
     
+    // ✅ Fix document URLs if they have localhost
+    const doctorObj = doctor.toObject();
+    if (doctorObj.documents) {
+      Object.keys(doctorObj.documents).forEach(key => {
+        if (doctorObj.documents[key] && doctorObj.documents[key].includes('localhost:3001')) {
+          doctorObj.documents[key] = doctorObj.documents[key].replace('http://localhost:3001', BASE_URL);
+        }
+      });
+    }
+    
     res.json({ 
       success: true, 
       data: {
-        ...doctor.toObject(),
+        ...doctorObj,
         isProfileComplete: doctor.isProfileComplete,
         status: doctor.status
       }
@@ -332,9 +325,14 @@ export const getDoctorProfile = async (req, res) => {
  */
 export const updateDoctorProfile = async (req, res) => {
   try {
-    const { phoneNumber, bio, clinicAddress, consultationFee, qualifications, availability } = req.body;
+    const userId = req.userId || req.user?.id || req.user?._id;
+    const { phoneNumber, bio, clinicAddress, consultationFee, qualifications, availability, upiId, documents } = req.body;
     
-    const doctor = await Doctor.findById(req.user.id);
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'User not authenticated' });
+    }
+    
+    const doctor = await Doctor.findById(userId);
     
     if (!doctor) {
       return res.status(404).json({ success: false, message: 'Doctor not found' });
@@ -347,6 +345,14 @@ export const updateDoctorProfile = async (req, res) => {
     if (clinicAddress !== undefined) doctor.clinicAddress = clinicAddress;
     if (qualifications !== undefined) doctor.qualifications = qualifications;
     if (availability !== undefined) doctor.availability = availability;
+    
+    // ✅ Update document fields (including UPI ID)
+    if (documents !== undefined) {
+      doctor.documents = { ...doctor.documents, ...documents };
+    }
+    if (upiId !== undefined) {
+      doctor.documents.upiId = upiId;
+    }
     
     // Reset rejection status if profile was rejected
     if (doctor.isRejected) {
@@ -370,10 +376,39 @@ export const updateDoctorProfile = async (req, res) => {
 };
 
 /**
- * @desc    Submit doctor profile for approval
- * @route   POST /api/doctors/submit-approval
+ * @desc    Upload document
+ * @route   POST /api/doctors/upload-document
  * @access  Private (Doctor only)
  */
+
+export const uploadDocument = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No file uploaded' });
+    }
+    
+    const userId = req.userId || req.user?.id || req.user?._id;
+    const documentType = req.body.type;
+    
+    // ✅ FORCE use BASE_URL from .env
+    const fileUrl = `${BASE_URL}/uploads/documents/${req.file.filename}`;
+    
+    console.log('Saving document URL:', fileUrl); // Should show github.dev URL
+    
+    const updateField = `documents.${documentType}`;
+    await Doctor.findByIdAndUpdate(userId, { [updateField]: fileUrl });
+    
+    res.json({
+      success: true,
+      message: 'Document uploaded successfully',
+      data: { url: fileUrl }
+    });
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 /**
  * @desc    Submit doctor profile for approval
  * @route   POST /api/doctors/submit-approval
@@ -409,22 +444,37 @@ export const submitForApproval = async (req, res) => {
       });
     }
     
-    // Check if profile is complete
+    // ✅ UPDATED: Check if profile is complete including documents
     const isComplete = doctor.phoneNumber && 
                        doctor.consultationFee > 0 && 
                        doctor.bio && 
                        doctor.clinicAddress?.street &&
-                       doctor.clinicAddress?.city;
+                       doctor.clinicAddress?.city &&
+                       doctor.documents?.aadharCard &&
+                       doctor.documents?.panCard &&
+                       doctor.documents?.medicalDegree;
     
     if (!isComplete) {
+      const missing = [];
+      if (!doctor.phoneNumber) missing.push('Phone Number');
+      if (!doctor.consultationFee || doctor.consultationFee <= 0) missing.push('Consultation Fee');
+      if (!doctor.bio) missing.push('Bio');
+      if (!doctor.clinicAddress?.street) missing.push('Street Address');
+      if (!doctor.clinicAddress?.city) missing.push('City');
+      if (!doctor.documents?.aadharCard) missing.push('Aadhar Card');
+      if (!doctor.documents?.panCard) missing.push('PAN Card');
+      if (!doctor.documents?.medicalDegree) missing.push('Medical Degree');
+      
       return res.status(400).json({ 
         success: false, 
-        message: 'Please complete your profile first' 
+        message: `Please complete your profile first. Missing: ${missing.join(', ')}`,
+        missing
       });
     }
     
     doctor.submittedForApproval = true;
     doctor.submittedAt = new Date();
+    doctor.status = 'submitted';
     await doctor.save();
     
     res.json({ 
@@ -437,7 +487,6 @@ export const submitForApproval = async (req, res) => {
   }
 };
 
-
 /**
  * @desc    Get doctor's appointments
  * @route   GET /api/doctors/appointments
@@ -445,9 +494,10 @@ export const submitForApproval = async (req, res) => {
  */
 export const getDoctorAppointments = async (req, res) => {
   try {
+    const doctorId = req.userId || req.user?.id || req.user?._id;
     const { status, date, page = 1, limit = 20 } = req.query;
     
-    let filter = { doctorId: req.user.id };
+    let filter = { doctorId };
     if (status) filter.status = status;
     if (date) {
       const startDate = new Date(date);
@@ -490,6 +540,7 @@ export const updateAppointmentStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
+    const doctorId = req.userId || req.user?.id || req.user?._id;
     
     const updateData = { status };
     
@@ -502,7 +553,7 @@ export const updateAppointmentStatus = async (req, res) => {
     }
     
     const appointment = await Appointment.findOneAndUpdate(
-      { _id: id, doctorId: req.user.id },
+      { _id: id, doctorId },
       updateData,
       { new: true }
     ).populate('patientId', 'fullName email');
@@ -512,7 +563,7 @@ export const updateAppointmentStatus = async (req, res) => {
     }
     
     if (status === 'completed') {
-      await Doctor.findByIdAndUpdate(req.user.id, {
+      await Doctor.findByIdAndUpdate(doctorId, {
         $inc: { totalConsultations: 1 }
       });
     }
@@ -531,9 +582,10 @@ export const updateAppointmentStatus = async (req, res) => {
  */
 export const getDoctorPatients = async (req, res) => {
   try {
+    const doctorId = req.userId || req.user?.id || req.user?._id;
     const { search, page = 1, limit = 20 } = req.query;
     
-    const appointments = await Appointment.find({ doctorId: req.user.id })
+    const appointments = await Appointment.find({ doctorId })
       .populate('patientId', 'fullName email age gender phoneNumber')
       .sort({ createdAt: -1 });
     
@@ -578,7 +630,6 @@ export const getDoctorPatients = async (req, res) => {
  */
 export const getDoctorStats = async (req, res) => {
   try {
-    // ✅ FIX: Use req.userId instead of req.user.id
     const doctorId = req.userId || req.user?.id || req.user?._id;
     
     if (!doctorId) {
@@ -587,8 +638,6 @@ export const getDoctorStats = async (req, res) => {
         message: 'User not authenticated' 
       });
     }
-    
-    // console.log('Fetching stats for doctorId:', doctorId);
     
     const appointments = await Appointment.find({ doctorId });
     const today = new Date();
@@ -638,7 +687,8 @@ export const getDoctorStats = async (req, res) => {
  */
 export const getDoctorSchedule = async (req, res) => {
   try {
-    const doctor = await Doctor.findById(req.user.id).select('availability');
+    const doctorId = req.userId || req.user?.id || req.user?._id;
+    const doctor = await Doctor.findById(doctorId).select('availability');
     res.json({ success: true, data: doctor?.availability || [] });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -652,10 +702,11 @@ export const getDoctorSchedule = async (req, res) => {
  */
 export const updateDoctorSchedule = async (req, res) => {
   try {
+    const doctorId = req.userId || req.user?.id || req.user?._id;
     const { availability } = req.body;
     
     const doctor = await Doctor.findByIdAndUpdate(
-      req.user.id,
+      doctorId,
       { availability },
       { new: true }
     ).select('availability');
@@ -709,7 +760,8 @@ export const getPublicDoctorById = async (req, res) => {
       id: String(doctor._id),
       fullName: user?.fullName || 'Doctor',
       email: user?.email || '',
-      profilePicture: doctor.profilePicture || user?.profilePicture || '',
+      // ✅ IMPORTANT: Add profile picture from documents
+      profilePicture: doctor.documents?.profilePhoto || doctor.profilePicture || user?.profilePicture || '',
       specialization: doctor.specialization,
       experience: doctor.experience,
       consultationFee: doctor.consultationFee,
@@ -719,7 +771,10 @@ export const getPublicDoctorById = async (req, res) => {
       bio: doctor.bio,
       phoneNumber: doctor.phoneNumber,
       qualifications: doctor.qualifications,
-      availability: doctor.availability
+      availability: doctor.availability,
+      isApproved: doctor.isApproved,
+      // ✅ Also send documents if needed
+      documents: doctor.documents || {}
     };
     
     res.status(200).json({
@@ -729,11 +784,9 @@ export const getPublicDoctorById = async (req, res) => {
     
   } catch (error) {
     console.error('Get public doctor by ID error:', error);
-    
     if (error.name === 'CastError') {
       return res.status(404).json({ success: false, message: 'Doctor not found' });
     }
-    
     res.status(500).json({
       success: false,
       message: 'Failed to fetch doctor details',

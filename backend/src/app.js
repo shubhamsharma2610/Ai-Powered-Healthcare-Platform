@@ -1,5 +1,8 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
 import authRoutes from './routes/authRoutes.js';
 import doctorRoutes from './routes/doctorRoutes.js';
 import appointmentRoutes from './routes/appointmentsRoutes.js';
@@ -8,74 +11,81 @@ import paymentRoutes from './routes/paymentRoutes.js';
 import aiRoutes from './routes/aiRoutes.js'; 
 import refundRoutes from './routes/refundRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
-import  {testGemini}  from './controllers/testAiController.js'; 
+import { testGemini } from './controllers/testAiController.js'; 
 import { errorHandler } from './utils/errorHandler.js';
-import cookieParser from "cookie-parser"
+import cookieParser from "cookie-parser";
 import cors from 'cors';
 import dns from "dns";
+
+// Get __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 dns.setServers(['8.8.8.8', '1.1.1.1']);
 
 const app = express();
-// app.options('/*', cors());
+
+// ==========================================
+// CREATE UPLOADS DIRECTORY IF NOT EXISTS
+// ==========================================
+const uploadsDir = path.join(__dirname, 'uploads');
+const documentsDir = path.join(uploadsDir, 'documents');
+
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  console.log('📁 Created uploads directory');
+}
+
+if (!fs.existsSync(documentsDir)) {
+  fs.mkdirSync(documentsDir, { recursive: true });
+  console.log('📁 Created documents directory');
+}
+
+// ==========================================
+// SERVE STATIC FILES (UPLOADS)
+// ==========================================
+// ✅ This allows uploaded files to be accessed via URL
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+console.log('📁 Static files served from: /uploads');
+
+// ==========================================
+// CORS CONFIGURATION
+// ==========================================
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000',"https://fantastic-invention-gxq7ggjgvp7xhwww9-5173.app.github.dev","https://fantastic-invention-gxq7ggjgvp7xhwww9.github.dev",
+  origin: ['http://localhost:5173', 'http://localhost:3000', 
+    "https://fantastic-invention-gxq7ggjgvp7xhwww9-5173.app.github.dev", 
+    "https://fantastic-invention-gxq7ggjgvp7xhwww9.github.dev",
     "https://fantastic-invention-gxq7ggjgvp7xhwww9-5173.app.github.dev"
   ],
-   // Multiple origins
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
-// app.use(cors({
-//   origin: '*',  // 👈 Star = All origins allowed
-//   credentials: true,
-//   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-//   allowedHeaders: ['Content-Type', 'Authorization']
-// }));
-// Handle preflight requests
-// app.options('*', cors());
 
-// Middleware
+// ==========================================
+// MIDDLEWARE
+// ==========================================
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 
-// Optional: CORS configuration (uncomment if needed)
-// import cors from 'cors';
-// app.use(cors({
-//   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-//   credentials: true,
-//   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-//   allowedHeaders: ['Content-Type', 'Authorization']
-// }));
-
 // ==========================================
 // ROUTES
 // ==========================================
-
-// Auth Routes
-
-
 app.use('/api/auth', authRoutes);
-
 app.use('/api/doctors', doctorRoutes);
-
 app.use('/api/appointments', appointmentRoutes);
-
 app.use('/api/payments', paymentRoutes);
-
 app.use('/api/patients', patientRoutes);
-
 app.use('/api/ai', aiRoutes);
 app.use('/api/refunds', refundRoutes);
-
 app.use('/api/admin', adminRoutes);
 
+// Test routes
 app.get('/test', testGemini);
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// Temporary test route - remove after testing
 app.get('/aitest', async (req, res) => {
   try {
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });

@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
-import { CheckCircle, XCircle, Clock, Mail, Phone, GraduationCap, Calendar, MapPin, DollarSign, Eye } from "lucide-react";
+import { 
+  CheckCircle, XCircle, Clock, Mail, Phone, GraduationCap, 
+  Calendar, MapPin, DollarSign, Eye, IdCard, Image, 
+  FileText, ExternalLink, CreditCard 
+} from "lucide-react";
 
 const API_URL = import.meta.env.VITE_BACKEND_BASE_URL || 'http://localhost:5000/api';
 
@@ -42,7 +46,7 @@ export default function Requests() {
         withCredentials: true
       });
       toast.success(`${doctor.fullName || doctor.name} approved successfully!`);
-      setShowDetailsModal(false); // Close modal if open
+      setShowDetailsModal(false);
       fetchPendingDoctors();
     } catch (error) {
       console.error('Error approving doctor:', error);
@@ -61,7 +65,7 @@ export default function Requests() {
         withCredentials: true
       });
       toast.success(`${doctor.fullName || doctor.name} rejected`);
-      setShowDetailsModal(false); // Close modal if open
+      setShowDetailsModal(false);
       fetchPendingDoctors();
     } catch (error) {
       console.error('Error rejecting doctor:', error);
@@ -157,7 +161,6 @@ export default function Requests() {
                     <p className="text-sm text-gray-500 mt-2 line-clamp-2">{doctor.bio}</p>
                   )}
                   
-                  {/* ✅ VIEW FULL PROFILE BUTTON */}
                   <button
                     onClick={() => viewFullProfile(doctor)}
                     className="mt-3 text-primary text-xs font-medium hover:underline flex items-center gap-1"
@@ -194,10 +197,10 @@ export default function Requests() {
         </div>
       )}
 
-      {/* ✅ FULL PROFILE MODAL */}
+      {/* FULL PROFILE MODAL WITH DOCUMENTS */}
       {showDetailsModal && selectedDoctor && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
             <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center">
               <h2 className="text-xl font-bold">Doctor Profile Details</h2>
@@ -211,6 +214,17 @@ export default function Requests() {
             
             {/* Modal Body */}
             <div className="p-6 space-y-4">
+              {/* Profile Photo */}
+              {selectedDoctor.documents?.profilePhoto && (
+                <div className="flex justify-center mb-4">
+                  <img 
+                    src={selectedDoctor.documents.profilePhoto} 
+                    alt="Profile" 
+                    className="w-24 h-24 rounded-full object-cover border-2 border-primary"
+                  />
+                </div>
+              )}
+
               {/* Personal Information */}
               <div>
                 <h3 className="font-semibold text-gray-800 mb-2 text-lg">Personal Information</h3>
@@ -225,6 +239,17 @@ export default function Requests() {
                   <div><span className="text-gray-500">Submitted:</span> {new Date(selectedDoctor.submittedAt).toLocaleString()}</div>
                 </div>
               </div>
+
+              {/* UPI ID */}
+              {selectedDoctor.documents?.upiId && (
+                <div>
+                  <h3 className="font-semibold text-gray-800 mb-2 text-lg">Payment Details</h3>
+                  <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                    <CreditCard size={16} className="text-primary" />
+                    <span className="text-sm text-gray-700">UPI ID: {selectedDoctor.documents.upiId}</span>
+                  </div>
+                </div>
+              )}
 
               {/* Bio */}
               {selectedDoctor.bio && (
@@ -247,7 +272,7 @@ export default function Requests() {
                 </div>
               )}
 
-              {/* Qualifications (if available) */}
+              {/* Qualifications */}
               {selectedDoctor.qualifications && selectedDoctor.qualifications.length > 0 && (
                 <div>
                   <h3 className="font-semibold text-gray-800 mb-2 text-lg">Qualifications</h3>
@@ -257,6 +282,63 @@ export default function Requests() {
                         <span className="font-medium">{qual.degree}</span> from {qual.institution} ({qual.year})
                       </div>
                     ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ✅ VERIFICATION DOCUMENTS SECTION */}
+              {selectedDoctor.documents && (
+                <div>
+                  <h3 className="font-semibold text-gray-800 mb-2 text-lg">Verification Documents</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {selectedDoctor.documents.aadharCard && (
+                      <a
+                        href={selectedDoctor.documents.aadharCard}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group"
+                      >
+                        <IdCard size={18} className="text-primary" />
+                        <span className="text-sm text-gray-700 flex-1">Aadhar Card</span>
+                        <ExternalLink size={14} className="text-gray-400 group-hover:text-primary" />
+                      </a>
+                    )}
+                    {selectedDoctor.documents.panCard && (
+                      <a
+                        href={selectedDoctor.documents.panCard}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group"
+                      >
+                        <IdCard size={18} className="text-primary" />
+                        <span className="text-sm text-gray-700 flex-1">PAN Card</span>
+                        <ExternalLink size={14} className="text-gray-400 group-hover:text-primary" />
+                      </a>
+                    )}
+                    {selectedDoctor.documents.medicalDegree && (
+                      <a
+                        href={selectedDoctor.documents.medicalDegree}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group"
+                      >
+                        <GraduationCap size={18} className="text-primary" />
+                        <span className="text-sm text-gray-700 flex-1">Medical Degree</span>
+                        <ExternalLink size={14} className="text-gray-400 group-hover:text-primary" />
+                      </a>
+                    )}
+                    {selectedDoctor.documents.profilePhoto && selectedDoctor.documents.profilePhoto !== selectedDoctor.documents.aadharCard && (
+                      <a
+                        href={selectedDoctor.documents.profilePhoto}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group"
+                      >
+                        <Image size={18} className="text-primary" />
+                        <span className="text-sm text-gray-700 flex-1">Profile Photo</span>
+                        <ExternalLink size={14} className="text-gray-400 group-hover:text-primary" />
+                      </a>
+                    )}
                   </div>
                 </div>
               )}

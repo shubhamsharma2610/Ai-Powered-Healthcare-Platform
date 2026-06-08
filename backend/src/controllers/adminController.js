@@ -14,9 +14,9 @@ export const getPendingDoctors = async (req, res) => {
     const doctors = await Doctor.aggregate([
       {
         $match: { 
-          submittedForApproval: true,  // ✅ IMPORTANT: Only submitted for approval
-          isApproved: false,           // Not approved yet
-          isRejected: { $ne: true }    // Not rejected
+          submittedForApproval: true,
+          isApproved: false,
+          isRejected: { $ne: true }
         }
       },
       {
@@ -34,7 +34,7 @@ export const getPendingDoctors = async (req, res) => {
         }
       },
       {
-        $sort: { 'submittedAt': -1 }  // Show newest submissions first
+        $sort: { 'submittedAt': -1 }
       }
     ]);
     
@@ -56,7 +56,15 @@ export const getPendingDoctors = async (req, res) => {
       submittedAt: doctor.submittedAt,
       isApproved: doctor.isApproved,
       createdAt: doctor.userData?.createdAt || doctor.createdAt,
-      appliedOn: doctor.submittedAt || doctor.createdAt
+      appliedOn: doctor.submittedAt || doctor.createdAt,
+      // ✅ ADD DOCUMENTS FIELD
+      documents: doctor.documents || {
+        profilePhoto: '',
+        aadharCard: '',
+        panCard: '',
+        medicalDegree: '',
+        upiId: ''
+      }
     }));
     
     res.json({ 
@@ -85,9 +93,8 @@ export const approveDoctor = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Doctor not found' });
     }
     
-    // Update doctor approval status
     doctor.isApproved = true;
-    doctor.submittedForApproval = false;  // Reset submission flag
+    doctor.submittedForApproval = false;
     doctor.approvedAt = new Date();
     doctor.isRejected = false;
     doctor.rejectionReason = null;
@@ -128,9 +135,8 @@ export const rejectDoctor = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Doctor not found' });
     }
     
-    // Update doctor rejection status
     doctor.isApproved = false;
-    doctor.submittedForApproval = false;  // Reset submission flag
+    doctor.submittedForApproval = false;
     doctor.isRejected = true;
     doctor.rejectionReason = reason || 'Profile does not meet our requirements';
     doctor.rejectedAt = new Date();
@@ -196,7 +202,8 @@ export const getAllDoctorsAdmin = async (req, res) => {
       isRejected: doctor.isRejected,
       approvedAt: doctor.approvedAt,
       submittedAt: doctor.submittedAt,
-      createdAt: doctor.userData?.createdAt
+      createdAt: doctor.userData?.createdAt,
+      documents: doctor.documents || {}
     }));
     
     res.json({ success: true, data: formattedDoctors });
@@ -276,7 +283,7 @@ export const getAdminStats = async (req, res) => {
       Doctor.countDocuments({ isApproved: false, submittedForApproval: false }),
       Doctor.countDocuments({ isApproved: true }),
       Doctor.countDocuments({ isRejected: true }),
-      Doctor.countDocuments({ submittedForApproval: true, isApproved: false }), // Doctors waiting for approval
+      Doctor.countDocuments({ submittedForApproval: true, isApproved: false }),
       Patient.countDocuments(),
       Appointment.countDocuments(),
       Appointment.countDocuments({ status: 'completed' }),
@@ -291,7 +298,7 @@ export const getAdminStats = async (req, res) => {
         pendingDoctors,
         approvedDoctors,
         rejectedDoctors,
-        submittedDoctors,  // ✅ New: Doctors pending admin review
+        submittedDoctors,
         totalPatients,
         totalAppointments,
         completedAppointments,
@@ -339,7 +346,15 @@ export const getDoctorDetails = async (req, res) => {
         rejectionReason: doctor.rejectionReason,
         submittedAt: doctor.submittedAt,
         approvedAt: doctor.approvedAt,
-        createdAt: doctor.createdAt
+        createdAt: doctor.createdAt,
+        // ✅ ADD DOCUMENTS FIELD
+        documents: doctor.documents || {
+          profilePhoto: '',
+          aadharCard: '',
+          panCard: '',
+          medicalDegree: '',
+          upiId: ''
+        }
       }
     });
   } catch (error) {

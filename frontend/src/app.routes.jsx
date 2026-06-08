@@ -44,20 +44,21 @@ import AdminPatients from './features/admin/pages/AdminPatients';
 
 const RoleBasedRoute = ({ children, allowedRoles = [] }) => {
   const { user, isAuthenticated } = useSelector((state) => state.auth);
+  const userRole = user?.role?.toLowerCase?.();
   
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
   
-  if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
+  if (allowedRoles.length > 0 && !allowedRoles.includes(userRole)) {
     // Redirect to appropriate dashboard
-    if (user?.role === 'patient') {
+    if (userRole === 'patient') {
       return <Navigate to="/patient/dashboard" replace />;
     }
-    if (user?.role === 'doctor') {
+    if (userRole === 'doctor') {
       return <Navigate to="/doctor/dashboard" replace />;
     }
-    if (user?.role === 'admin') {
+    if (userRole === 'admin') {
       return <Navigate to="/admin" replace />;
     }
     return <Navigate to="/" replace />;
@@ -68,16 +69,17 @@ const RoleBasedRoute = ({ children, allowedRoles = [] }) => {
 
 const AdminRoute = ({ children }) => {
   const { user, isAuthenticated } = useSelector((state) => state.auth);
+  const userRole = user?.role?.toLowerCase?.();
   
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
   
-  if (user?.role !== 'admin') {
-    if (user?.role === 'patient') {
+  if (userRole !== 'admin') {
+    if (userRole === 'patient') {
       return <Navigate to="/patient/dashboard" replace />;
     }
-    if (user?.role === 'doctor') {
+    if (userRole === 'doctor') {
       return <Navigate to="/doctor/dashboard" replace />;
     }
     return <Navigate to="/" replace />;
@@ -88,18 +90,19 @@ const AdminRoute = ({ children }) => {
 
 const RoleBasedRedirect = () => {
   const { user, isAuthenticated } = useSelector((state) => state.auth);
+  const userRole = user?.role?.toLowerCase?.();
   
   if (!isAuthenticated) {
     return <Navigate to="/" replace />;
   }
   
-  if (user?.role === 'patient') {
+  if (userRole === 'patient') {
     return <Navigate to="/patient/dashboard" replace />;
   }
-  if (user?.role === 'doctor') {
+  if (userRole === 'doctor') {
     return <Navigate to="/doctor/dashboard" replace />;
   }
-  if (user?.role === 'admin') {
+  if (userRole === 'admin') {
     return <Navigate to="/admin" replace />;
   }
   

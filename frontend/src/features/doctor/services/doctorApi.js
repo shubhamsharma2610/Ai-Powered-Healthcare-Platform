@@ -77,4 +77,36 @@ export const submitForApproval = async () => {
   return response.data;
 };
 
+// ============ DOCUMENT UPLOAD ============
+/**
+ * Upload document (profile photo, aadhar card, pan card, medical degree)
+ * @param {File} file - The file to upload
+ * @param {string} documentType - Type of document (profilePhoto, aadharCard, panCard, medicalDegree)
+ * @returns {Promise} - Response with file URL
+ */
+export const uploadDocument = async (file, documentType) => {
+  const formData = new FormData();
+  formData.append('document', file);
+  formData.append('type', documentType);
+  
+  const response = await api.post('/doctors/upload-document', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  });
+  return response.data;
+};
+
+// ============ GET ALL DOCTORS (PUBLIC) ============
+export const getAllDoctors = async (params = {}) => {
+  const response = await api.get('/doctors', { params });
+  return response.data;
+};
+
+// ============ GET SINGLE DOCTOR BY ID (PUBLIC) ============
+export const getDoctorById = async (id) => {
+  const response = await api.get(`/doctors/${id}`);
+  return response.data;
+};
+
 export default api;
