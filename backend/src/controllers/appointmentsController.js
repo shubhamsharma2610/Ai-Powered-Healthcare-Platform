@@ -3,7 +3,7 @@ import Doctor from '../models/Doctor.js';
 import Patient from '../models/Patient.js';
 import { processRefund, calculateRefundAmount, checkRefundEligibility, getRefundStatus } from '../utils/refundUtils.js';
 
-// Book appointment - with duplicate check
+// Book appointment - with duplicate check AND schedule validation
 export const bookAppointment = async (req, res) => {
   try {
     const { doctorId, date, timeSlot, symptoms, amount } = req.body;
@@ -14,7 +14,28 @@ export const bookAppointment = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Doctor not found' });
     }
 
-    // Duplicate booking check
+    // ✅ 1. Validate doctor's schedule for selected date
+    const appointmentDate = new Date(date);
+    const dayName = appointmentDate.toLocaleDateString('en-US', { weekday: 'long' });
+    
+    const daySchedule = doctor.availability?.find(slot => slot.day === dayName);
+    
+    if (!daySchedule || !daySchedule.isAvailable) {
+      return res.status(400).json({ 
+        success: false, 
+        message: `Doctor is not available on ${dayName}. Please check doctor's schedule.` 
+      });
+    }
+    
+    // ✅ 2. Validate time slot is within working hours
+    if (timeSlot < daySchedule.startTime || timeSlot > daySchedule.endTime) {
+      return res.status(400).json({ 
+        success: false, 
+        message: `Selected time ${timeSlot} is outside doctor's working hours (${daySchedule.startTime} - ${daySchedule.endTime}).` 
+      });
+    }
+
+    // ✅ 3. Duplicate booking check
     const existingAppointment = await Appointment.findOne({
       patientId,
       doctorId,
@@ -27,6 +48,21 @@ export const bookAppointment = async (req, res) => {
       return res.status(400).json({ 
         success: false, 
         message: 'You already have an appointment at this time. Please cancel existing appointment to book a new one.' 
+      });
+    }
+
+    // ✅ 4. Check if time slot is already booked by another patient
+    const slotBooked = await Appointment.findOne({
+      doctorId,
+      date: new Date(date),
+      timeSlot,
+      status: { $in: ['pending', 'confirmed', 'completed'] }
+    });
+
+    if (slotBooked) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'This time slot is already booked. Please select another time.' 
       });
     }
 
@@ -305,6 +341,49 @@ export const getCompletedAppointments = async (req, res) => {
       success: true, 
       data: { appointments, totalEarnings }
     });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ✅ NEW: Check if time slot is available before booking
+export const checkSlotAvailability = async (req, res) => {
+  try {
+    const { doctorId, date, timeSlot } = req.query;
+    
+    const doctor = await Doctor.findById(doctorId);
+    if (!doctor || !doctor.isApproved) {
+      return res.status(404).json({ success: false, message: 'Doctor not found' });
+    }
+    
+    // Check schedule
+    const appointmentDate = new Date(date);
+    const dayName = appointmentDate.toLocaleDateString('en-US', { weekday: 'long' });
+    const daySchedule = doctor.availability?.find(slot => slot.day === dayName);
+    
+    if (!daySchedule || !daySchedule.isAvailable) {
+      return res.json({ success: true, available: false, reason: 'Doctor not available on this day' });
+    }
+    
+    if (timeSlot && (timeSlot < daySchedule.startTime || timeSlot > daySchedule.endTime)) {
+      return res.json({ success: true, available: false, reason: 'Time slot outside working hours' });
+    }
+    
+    // Check if slot is already booked
+    if (timeSlot) {
+      const existingBooking = await Appointment.findOne({
+        doctorId,
+        date: new Date(date),
+        timeSlot,
+        status: { $in: ['pending', 'confirmed', 'completed'] }
+      });
+      
+      if (existingBooking) {
+        return res.json({ success: true, available: false, reason: 'Time slot already booked' });
+      }
+    }
+    
+    res.json({ success: true, available: true });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

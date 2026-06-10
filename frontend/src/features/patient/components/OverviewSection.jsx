@@ -304,7 +304,7 @@ export default function OverviewSection() {
               return (
                 <div key={apt._id} className="flex justify-between items-center pb-2 border-b">
                   <div>
-                    <p className="font-medium text-gray-800">Dr. {apt.doctorId?.fullName}</p>
+                    <p className="font-medium text-gray-800">{apt.doctorId?.fullName}</p>
                     <p className="text-xs text-gray-500">{new Date(apt.date).toLocaleDateString()} at {apt.timeSlot}</p>
                   </div>
                   <span className={`text-xs px-2 py-1 rounded-full ${statusColor} capitalize`}>

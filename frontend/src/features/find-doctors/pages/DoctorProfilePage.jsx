@@ -2,12 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchDoctorById, clearSelectedDoctor } from '../../../redux/slices/doctorSlice';
-import { MapPin, Clock, DollarSign, Star, Briefcase, Award, ChevronLeft, Calendar, CheckCircle } from 'lucide-react';
+import { MapPin, Clock, DollarSign, Star, Briefcase, Award, ChevronLeft, Calendar, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 
-// ✅ FIXED: Use VITE_BACKEND_BASE_URL instead of BAS
-const API_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_BACKEND_BASE_URL || 'http://localhost:5000/api';
 
 export default function DoctorProfilePage() {
   const { id } = useParams();
@@ -21,9 +20,16 @@ export default function DoctorProfilePage() {
   const [doctorSchedule, setDoctorSchedule] = useState([]);
   const [loadingSchedule, setLoadingSchedule] = useState(false);
   const [availableTimeSlots, setAvailableTimeSlots] = useState([]);
+  
+  // Validation states
+  const [dateError, setDateError] = useState('');
+  const [timeError, setTimeError] = useState('');
+  const [isDateValid, setIsDateValid] = useState(false);
+  const [isTimeValid, setIsTimeValid] = useState(false);
+  const [isCheckingSlot, setIsCheckingSlot] = useState(false);
+  const [daySchedule, setDaySchedule] = useState(null);
 
   useEffect(() => {
-    console.log('API_URL being used:', API_URL); // Debug log
     dispatch(fetchDoctorById(id));
     return () => {
       dispatch(clearSelectedDoctor());
@@ -50,57 +56,149 @@ export default function DoctorProfilePage() {
     }
   };
 
-  // ... rest of your functions remain the same ...
-
-  const isDateAvailable = (date) => {
-    if (!doctorSchedule.length) return true;
+  // Check date availability
+  const checkDateAvailability = (date) => {
+    if (!doctorSchedule.length) return { valid: true, error: '', schedule: null };
+    
     const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
-    const daySchedule = doctorSchedule.find(slot => slot.day === dayName);
-    return daySchedule && daySchedule.isAvailable;
-  };
-
-  const getAvailableTimeSlotsForDate = (date) => {
-    if (!doctorSchedule.length) {
-      return ['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00'];
+    const schedule = doctorSchedule.find(slot => slot.day === dayName);
+    
+    if (!schedule || !schedule.isAvailable) {
+      return { valid: false, error: `Doctor is not available on ${dayName}`, schedule: null };
     }
     
-    const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
-    const daySchedule = doctorSchedule.find(slot => slot.day === dayName);
-    
-    if (!daySchedule || !daySchedule.isAvailable) return [];
-    
+    return { valid: true, error: '', schedule };
+  };
+
+  // ✅ FIXED: Generate time slots based on doctor's schedule (excludes end time)
+  const generateTimeSlots = (schedule) => {
     const slots = [];
-    const startHour = parseInt(daySchedule.startTime.split(':')[0]);
-    const endHour = parseInt(daySchedule.endTime.split(':')[0]);
     
-    for (let hour = startHour; hour < endHour; hour++) {
-      slots.push(`${hour.toString().padStart(2, '0')}:00`);
-      slots.push(`${hour.toString().padStart(2, '0')}:30`);
+    // Parse start and end times
+    const [startHour, startMinute] = schedule.startTime.split(':').map(Number);
+    const [endHour, endMinute] = schedule.endTime.split(':').map(Number);
+    
+    let currentHour = startHour;
+    let currentMinute = startMinute;
+    
+    // Convert to minutes for easier comparison
+    const endTotalMinutes = endHour * 60 + endMinute;
+    
+    while (true) {
+      const currentTotalMinutes = currentHour * 60 + currentMinute;
+      
+      // ✅ Stop if current time is >= end time
+      // For 9:00 to 11:00:
+      // 9:00 ✅, 9:30 ✅, 10:00 ✅, 10:30 ✅, 11:00 ❌ (stop)
+      if (currentTotalMinutes >= endTotalMinutes) {
+        break;
+      }
+      
+      // Add current slot
+      const timeSlot = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
+      slots.push(timeSlot);
+      
+      // Add 30 minutes
+      currentMinute += 30;
+      if (currentMinute >= 60) {
+        currentHour += 1;
+        currentMinute = 0;
+      }
     }
     
     return slots;
   };
 
-  useEffect(() => {
-    if (selectedDate) {
-      const slots = getAvailableTimeSlotsForDate(new Date(selectedDate));
+  // Handle date change
+  const handleDateChange = (e) => {
+    const date = new Date(e.target.value);
+    setSelectedDate(e.target.value);
+    setSelectedTime('');
+    setIsTimeValid(false);
+    setTimeError('');
+    
+    const { valid, error, schedule } = checkDateAvailability(date);
+    
+    if (valid) {
+      setIsDateValid(true);
+      setDateError('');
+      setDaySchedule(schedule);
+      const slots = generateTimeSlots(schedule);
       setAvailableTimeSlots(slots);
-      setSelectedTime('');
+    } else {
+      setIsDateValid(false);
+      setDateError(error);
+      setDaySchedule(null);
+      setAvailableTimeSlots([]);
     }
-  }, [selectedDate, doctorSchedule]);
+  };
 
-  const handleBookNow = () => {
+  // Check if time slot is already booked
+  const checkSlotAvailability = async (date, timeSlot) => {
+    setIsCheckingSlot(true);
+    setTimeError('');
+    
+    try {
+      const response = await axios.get(`${API_URL}/appointments/check-slot`, {
+        params: {
+          doctorId: selectedDoctor.id,
+          date: date,
+          timeSlot: timeSlot
+        },
+        withCredentials: true
+      });
+      
+      if (response.data.success && response.data.available) {
+        setIsTimeValid(true);
+        setTimeError('');
+        return true;
+      } else {
+        setIsTimeValid(false);
+        setTimeError(response.data.reason || 'This time slot is already booked');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error checking slot:', error);
+      // If API fails, still allow booking based on basic validation
+      setIsTimeValid(true);
+      setTimeError('');
+      return true;
+    } finally {
+      setIsCheckingSlot(false);
+    }
+  };
+
+  // Handle time slot selection
+  const handleTimeSelect = async (timeSlot) => {
+    setSelectedTime(timeSlot);
+    setIsTimeValid(false);
+    setTimeError('');
+    
+    if (selectedDate && timeSlot) {
+      await checkSlotAvailability(selectedDate, timeSlot);
+    }
+  };
+
+  const handleBookNow = async () => {
+    // Validate date
     if (!selectedDate) {
       toast.error('Please select a date');
       return;
     }
+    
+    if (!isDateValid) {
+      toast.error(dateError || 'Please select a valid date');
+      return;
+    }
+    
+    // Validate time
     if (!selectedTime) {
       toast.error('Please select a time slot');
       return;
     }
     
-    if (!isDateAvailable(new Date(selectedDate))) {
-      toast.error('Doctor is not available on this day');
+    if (!isTimeValid) {
+      toast.error(timeError || 'Please select a valid time slot');
       return;
     }
     
@@ -110,8 +208,22 @@ export default function DoctorProfilePage() {
       return;
     }
     
+    // Double check slot availability before proceeding
+    setIsCheckingSlot(true);
+    const isAvailable = await checkSlotAvailability(selectedDate, selectedTime);
+    setIsCheckingSlot(false);
+    
+    if (!isAvailable) {
+      toast.error('This time slot is no longer available. Please select another time.');
+      return;
+    }
+    
     navigate(`/doctor/${id}/book`, {
-      state: { doctor: selectedDoctor, selectedDate, selectedTime }
+      state: { 
+        doctor: selectedDoctor, 
+        selectedDate, 
+        selectedTime 
+      }
     });
   };
 
@@ -130,6 +242,13 @@ export default function DoctorProfilePage() {
     if (!name) return 'D';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
+
+  // Check if book button should be enabled
+  const isBookEnabled = selectedDate && 
+                        isDateValid && 
+                        selectedTime && 
+                        isTimeValid && 
+                        !isCheckingSlot;
 
   if (loading) {
     return (
@@ -177,6 +296,7 @@ export default function DoctorProfilePage() {
         </button>
 
         <div className="bg-white rounded-medical shadow-card overflow-hidden">
+          {/* Header */}
           <div className="bg-primary-50 px-6 py-5">
             <div className="flex flex-col md:flex-row gap-5">
               {profilePhoto ? (
@@ -228,13 +348,14 @@ export default function DoctorProfilePage() {
             </div>
           </div>
 
-          {/* Rest of your JSX remains the same */}
           <div className="p-6 space-y-5">
+            {/* About */}
             <div>
               <h2 className="text-md font-semibold text-gray-800 mb-1">About</h2>
               <p className="text-sm text-gray-500">{doctorBio}</p>
             </div>
 
+            {/* Qualifications */}
             {doctorQualifications.length > 0 && (
               <div>
                 <h2 className="text-md font-semibold text-gray-800 mb-2 flex items-center gap-2">
@@ -248,6 +369,7 @@ export default function DoctorProfilePage() {
               </div>
             )}
 
+            {/* Location */}
             {doctorClinicAddress?.city && (
               <div>
                 <h2 className="text-md font-semibold text-gray-800 mb-2 flex items-center gap-2">
@@ -262,65 +384,121 @@ export default function DoctorProfilePage() {
               </div>
             )}
 
+            {/* Booking Section */}
             <div className="border-t border-gray-100 pt-5">
               <h2 className="text-md font-semibold text-gray-800 mb-3 flex items-center gap-2">
                 <Calendar size={16} /> Book Appointment
               </h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                {/* Date Selection */}
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Select Date</label>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Select Date *</label>
                   <input
                     type="date"
                     value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
+                    onChange={handleDateChange}
                     min={getMinDate()}
-                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-medical focus:outline-none focus:border-primary"
+                    className={`w-full px-3 py-2 text-sm border rounded-medical focus:outline-none focus:border-primary ${
+                      dateError ? 'border-red-500' : 'border-gray-200'
+                    }`}
                   />
-                  {selectedDate && !isDateAvailable(new Date(selectedDate)) && doctorSchedule.length > 0 && (
-                    <p className="text-xs text-red-500 mt-1">Doctor is not available on this day</p>
+                  
+                  {/* Date validation message */}
+                  {dateError && (
+                    <div className="flex items-center gap-1 mt-1 text-xs text-red-500">
+                      <XCircle size={12} />
+                      <span>{dateError}</span>
+                    </div>
+                  )}
+                  
+                  {isDateValid && daySchedule && (
+                    <div className="flex items-center gap-1 mt-1 text-xs text-green-600">
+                      <CheckCircle size={12} />
+                      <span>Available {daySchedule.day} ({daySchedule.startTime} - {daySchedule.endTime})</span>
+                    </div>
                   )}
                 </div>
                 
+                {/* Time Slot Selection */}
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Select Time</label>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Select Time Slot *</label>
+                  
                   {loadingSchedule ? (
-                    <div className="flex justify-center py-2">
+                    <div className="flex justify-center py-4">
                       <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary"></div>
                     </div>
+                  ) : !selectedDate ? (
+                    <p className="text-sm text-gray-400 py-2">Please select a date first</p>
                   ) : availableTimeSlots.length === 0 ? (
                     <p className="text-sm text-gray-400 py-2">No available slots for selected date</p>
                   ) : (
-                    <div className="grid grid-cols-3 gap-2">
-                      {availableTimeSlots.map((slot) => (
-                        <button
-                          key={slot}
-                          onClick={() => setSelectedTime(slot)}
-                          className={`px-2 py-1.5 text-xs rounded-medical border transition-all ${
-                            selectedTime === slot
-                              ? 'bg-primary text-white border-primary'
-                              : 'border-gray-200 text-gray-600 hover:border-primary'
-                          }`}
-                        >
-                          {slot}
-                        </button>
-                      ))}
-                    </div>
+                    <>
+                      <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto">
+                        {availableTimeSlots.map((slot) => (
+                          <button
+                            key={slot}
+                            onClick={() => handleTimeSelect(slot)}
+                            disabled={isCheckingSlot}
+                            className={`px-2 py-1.5 text-xs rounded-medical border transition-all ${
+                              selectedTime === slot && isTimeValid
+                                ? 'bg-primary text-white border-primary'
+                                : selectedTime === slot && !isTimeValid
+                                ? 'bg-red-50 text-red-500 border-red-300'
+                                : 'border-gray-200 text-gray-600 hover:border-primary hover:text-primary'
+                            }`}
+                          >
+                            {slot}
+                            {selectedTime === slot && !isTimeValid && (
+                              <span className="ml-1 text-[10px]">❌</span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                      
+                      {/* Time validation message */}
+                      {timeError && (
+                        <div className="flex items-center gap-1 mt-2 text-xs text-red-500">
+                          <AlertCircle size={12} />
+                          <span>{timeError}</span>
+                        </div>
+                      )}
+                      
+                      {isCheckingSlot && (
+                        <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
+                          <div className="animate-spin rounded-full h-3 w-3 border border-primary border-t-transparent"></div>
+                          <span>Checking availability...</span>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
 
+              {/* Book Button with validation */}
               <button
                 onClick={handleBookNow}
-                disabled={!selectedDate || !selectedTime || (selectedDate && !isDateAvailable(new Date(selectedDate)))}
-                className="w-full py-2.5 bg-primary text-white rounded-medical text-sm font-medium hover:bg-primary-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!isBookEnabled}
+                className={`w-full py-2.5 rounded-medical text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                  isBookEnabled
+                    ? 'bg-primary text-white hover:bg-primary-600 cursor-pointer'
+                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                }`}
               >
-                Book Appointment
+                {isCheckingSlot ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                    Verifying Slot...
+                  </>
+                ) : (
+                  'Book Appointment'
+                )}
               </button>
 
+              {/* Doctor's Availability Summary */}
               {doctorSchedule.length > 0 && (
                 <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                  <p className="text-xs text-gray-500 font-medium mb-1">Doctor's Availability:</p>
+                  <p className="text-xs text-gray-500 font-medium mb-1">Doctor's Weekly Schedule:</p>
                   <div className="flex flex-wrap gap-2">
                     {doctorSchedule.filter(s => s.isAvailable).map(slot => (
                       <span key={slot.day} className="text-xs bg-primary/10 text-primary-dark px-2 py-0.5 rounded-full">
