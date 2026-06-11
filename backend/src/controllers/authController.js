@@ -121,7 +121,7 @@ export const register = asyncHandler(async (req, res) => {
   const token = generateToken(newUser._id, newUser.role);
 
   // ✅ Set cookie for register as well
-  const isProd = process.env.NODE_ENV === 'production';
+  const isProd = process.env.NODE_ENV === 'production' || Boolean(process.env.RENDER);
   const cookieOptions = {
     httpOnly: true,
     secure: isProd,
@@ -200,29 +200,16 @@ export const login = asyncHandler(async (req, res) => {
     // Generate JWT token
     const token = generateToken(user._id, user.role);
 
-    // ✅ Cookie options - FIXED for production
-    const isProd = process.env.NODE_ENV === 'production';
-    
-    // Log for debugging
-    console.log('🍪 Setting cookie with options:', {
-      isProd,
-      secure: isProd,
-      sameSite: isProd ? 'none' : 'lax',
-      domain: isProd ? '.onrender.com' : undefined
-    });
+    // ✅ Cookie options for production and Render
+    const isProd = process.env.NODE_ENV === 'production' || Boolean(process.env.RENDER);
 
     const cookieOptions = {
       httpOnly: true,
-      secure: isProd,           // ✅ true for HTTPS (production)
-      sameSite: isProd ? 'none' : 'lax', // ✅ 'none' for cross-origin
+      secure: isProd,           // true when served over HTTPS
+      sameSite: isProd ? 'none' : 'lax', // allow cross-site cookies in production
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       path: '/'
     };
-
-    // ✅ Add domain for production (optional but helps)
-    if (isProd) {
-      cookieOptions.domain = '.onrender.com';
-    }
 
     res.cookie('token', token, cookieOptions);
 
@@ -293,7 +280,7 @@ export const getCurrentUser = asyncHandler(async (req, res) => {
  * @access Private
  */
 export const logout = asyncHandler(async (req, res) => {
-  const isProd = process.env.NODE_ENV === 'production';
+  const isProd = process.env.NODE_ENV === 'production' || Boolean(process.env.RENDER);
   
   const clearOpts = { 
     httpOnly: true, 
@@ -301,10 +288,6 @@ export const logout = asyncHandler(async (req, res) => {
     sameSite: isProd ? 'none' : 'lax',
     path: '/'
   };
-  
-  if (isProd) {
-    clearOpts.domain = '.onrender.com';
-  }
   
   res.clearCookie('token', clearOpts);
   res.clearCookie('myToken', { 

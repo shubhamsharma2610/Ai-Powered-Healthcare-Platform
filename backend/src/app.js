@@ -14,6 +14,7 @@ import adminRoutes from './routes/adminRoutes.js';
 import { testGemini } from './controllers/testAiController.js'; 
 import { errorHandler } from './utils/errorHandler.js';
 import cookieParser from "cookie-parser";
+import cors from 'cors';
 import dns from "dns";
 
 // Get __dirname equivalent in ES modules
@@ -50,40 +51,46 @@ console.log('📁 Static files served from: /uploads');
 // ==========================================
 // CORS CONFIGURATION
 // ==========================================
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://ai-powered-healthcare-platform-frontend.onrender.com',
+  process.env.FRONTEND_URL
+].filter(Boolean);
 
-  // Build allowed origins list (filter out undefined)
-  const allowedOrigins = [
-    'http://localhost:5173',
-    'http://localhost:3000',
-    'https://ai-powered-healthcare-platform-frontend.onrender.com',
-    process.env.FRONTEND_URL
-  ].filter(Boolean);
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin) {
+      return callback(null, true);
+    }
 
-  // Log origin for debugging CORS issues in production
-  if (process.env.NODE_ENV === 'production') {
-    console.log('🔐 CORS check - origin:', origin, 'allowed:', allowedOrigins.includes(origin));
-  }
+    const isGithubDev = (() => {
+      try {
+        const hostname = new URL(origin).hostname;
+        return hostname.endsWith('.github.dev');
+      } catch {
+        return false;
+      }
+    })();
 
-  // If the request origin matches an allowed origin, echo it back (required when using credentials)
-  if (origin && allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  }
+    const allowed = allowedOrigins.includes(origin) || isGithubDev;
+    if (process.env.NODE_ENV === 'production') {
+      console.log('🔐 CORS origin:', origin, 'allowed:', allowed, 'isGithubDev:', isGithubDev);
+    }
 
-  // Always expose these headers for preflight and credentialed requests
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Max-Age', '86400');
+    if (allowed) {
+      callback(null, true);
+    } else {
+      callback(new Error(`Origin not allowed by CORS: ${origin}`));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+};
 
-  // For preflight requests, ensure headers are sent before ending the response
-  if (req.method === 'OPTIONS') {
-    return res.status(204).end();
-  }
-
-  next();
-});
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 // ==========================================
 // MIDDLEWARE
