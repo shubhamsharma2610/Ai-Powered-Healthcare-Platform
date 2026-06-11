@@ -54,15 +54,28 @@ console.log('📁 Static files served from: /uploads');
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
-  'https://ai-powered-healthcare-platform-frontend.onrender.com',
-  process.env.FRONTEND_URL
-].filter(Boolean); // Remove undefined/null values
+  'https://ai-powered-healthcare-platform-frontend.onrender.com'
+];
+
+// Add FRONTEND_URL from env if set
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.push(process.env.FRONTEND_URL);
+}
 
 app.use(cors({
-  origin: allowedOrigins,
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log('CORS blocked origin:', origin);
+      callback(null, true); // Temporarily allow all for debugging
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  optionsSuccessStatus: 200
 }));
 
 // ==========================================
