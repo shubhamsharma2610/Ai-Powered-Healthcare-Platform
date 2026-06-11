@@ -51,12 +51,15 @@ console.log('📁 Static files served from: /uploads');
 // ==========================================
 // CORS CONFIGURATION
 // ==========================================
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://ai-powered-healthcare-platform-frontend.onrender.com',
+  process.env.FRONTEND_URL
+].filter(Boolean); // Remove undefined/null values
+
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000', 
-    "https://fantastic-invention-gxq7ggjgvp7xhwww9-5173.app.github.dev", 
-    "https://fantastic-invention-gxq7ggjgvp7xhwww9.github.dev",
-    "https://fantastic-invention-gxq7ggjgvp7xhwww9-5173.app.github.dev"
-  ],
+  origin: allowedOrigins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
