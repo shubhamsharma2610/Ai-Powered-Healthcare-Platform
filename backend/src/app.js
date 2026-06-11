@@ -14,7 +14,6 @@ import adminRoutes from './routes/adminRoutes.js';
 import { testGemini } from './controllers/testAiController.js'; 
 import { errorHandler } from './utils/errorHandler.js';
 import cookieParser from "cookie-parser";
-import cors from 'cors';
 import dns from "dns";
 
 // Get __dirname equivalent in ES modules
