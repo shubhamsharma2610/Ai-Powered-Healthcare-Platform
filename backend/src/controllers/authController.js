@@ -181,16 +181,24 @@ export const login = asyncHandler(async (req, res) => {
 
     // Generate JWT token
     const token = generateToken(user._id, user.role);
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 24 * 60 * 60 * 1000
-    });
 
+    // Cookie options: make cookies cross-site usable in production
+    const isProd = process.env.NODE_ENV === 'production';
+    const cookieOptions = {
+      httpOnly: true,
+      secure: isProd,           // require HTTPS in production
+      sameSite: isProd ? 'none' : 'lax', // allow cross-site cookies in production
+      maxAge: 24 * 60 * 60 * 1000
+    };
+
+    res.cookie('token', token, cookieOptions);
+
+    // secondary cookie (non-http-only) retained for compatibility if used elsewhere
     res.cookie('myToken', token, {
-        httpOnly: true,
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-        sameSite: 'strict'
+      httpOnly: false,
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
     return res.status(200).json({
@@ -251,8 +259,11 @@ export const getCurrentUser = asyncHandler(async (req, res) => {
  */
 export const logout = asyncHandler(async (req, res) => {
   // Clear cookies
-  res.clearCookie('token');
-  res.clearCookie('myToken');
+  // When clearing cookies, pass the same options used when setting them so browsers remove them correctly
+  const isProd = process.env.NODE_ENV === 'production';
+  const clearOpts = { httpOnly: true, secure: isProd, sameSite: isProd ? 'none' : 'lax' };
+  res.clearCookie('token', clearOpts);
+  res.clearCookie('myToken', { httpOnly: false, secure: isProd, sameSite: isProd ? 'none' : 'lax' });
   
   return res.status(200).json({
     success: true,
