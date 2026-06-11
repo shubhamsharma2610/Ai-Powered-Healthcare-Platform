@@ -52,29 +52,36 @@ console.log('📁 Static files served from: /uploads');
 // ==========================================
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  
-  // Allow specific origins
+
+  // Build allowed origins list (filter out undefined)
   const allowedOrigins = [
     'http://localhost:5173',
     'http://localhost:3000',
     'https://ai-powered-healthcare-platform-frontend.onrender.com',
     process.env.FRONTEND_URL
-  ];
-  
-  if (allowedOrigins.includes(origin)) {
+  ].filter(Boolean);
+
+  // Log origin for debugging CORS issues in production
+  if (process.env.NODE_ENV === 'production') {
+    console.log('🔐 CORS check - origin:', origin, 'allowed:', allowedOrigins.includes(origin));
+  }
+
+  // If the request origin matches an allowed origin, echo it back (required when using credentials)
+  if (origin && allowedOrigins.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
   }
-  
+
+  // Always expose these headers for preflight and credentialed requests
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Max-Age', '86400');
-  
-  // Handle preflight requests
+
+  // For preflight requests, ensure headers are sent before ending the response
   if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
+    return res.status(204).end();
   }
-  
+
   next();
 });
 
