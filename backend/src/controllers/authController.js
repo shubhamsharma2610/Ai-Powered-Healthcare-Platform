@@ -96,11 +96,10 @@ export const register = asyncHandler(async (req, res) => {
       clinicAddress: otherData.clinicAddress,
       consultationFee: otherData.consultationFee,
       qualifications: otherData.qualifications || [],
-      isApproved: false  // For testing, auto-approve. In production, set to false
+      isApproved: false
     });
   }
   else if (role === 'admin') {
-    // ✅ Admin registration
     newUser = new User({
       fullName: fullName.trim(),
       email: email.toLowerCase(),
@@ -120,6 +119,25 @@ export const register = asyncHandler(async (req, res) => {
 
   await newUser.save();
   const token = generateToken(newUser._id, newUser.role);
+
+  // ✅ Set cookie for register as well
+  const isProd = process.env.NODE_ENV === 'production';
+  const cookieOptions = {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    path: '/'
+  };
+
+  res.cookie('token', token, cookieOptions);
+  res.cookie('myToken', token, {
+    httpOnly: false,
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    path: '/'
+  });
 
   return res.status(201).json({
     success: true,
@@ -182,25 +200,42 @@ export const login = asyncHandler(async (req, res) => {
     // Generate JWT token
     const token = generateToken(user._id, user.role);
 
-    // Cookie options: make cookies cross-site usable in production
+    // ✅ Cookie options - FIXED for production
     const isProd = process.env.NODE_ENV === 'production';
+    
+    // Log for debugging
+    console.log('🍪 Setting cookie with options:', {
+      isProd,
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
+      domain: isProd ? '.onrender.com' : undefined
+    });
+
     const cookieOptions = {
       httpOnly: true,
-      secure: isProd,           // require HTTPS in production
-      sameSite: isProd ? 'none' : 'lax', // allow cross-site cookies in production
-      maxAge: 24 * 60 * 60 * 1000
+      secure: isProd,           // ✅ true for HTTPS (production)
+      sameSite: isProd ? 'none' : 'lax', // ✅ 'none' for cross-origin
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: '/'
     };
+
+    // ✅ Add domain for production (optional but helps)
+    if (isProd) {
+      cookieOptions.domain = '.onrender.com';
+    }
 
     res.cookie('token', token, cookieOptions);
 
-    // secondary cookie (non-http-only) retained for compatibility if used elsewhere
+    // secondary cookie (non-http-only) for compatibility
     res.cookie('myToken', token, {
       httpOnly: false,
       secure: isProd,
       sameSite: isProd ? 'none' : 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: '/'
     });
 
+    // ✅ Also set in response body for manual storage if needed
     return res.status(200).json({
       success: true,
       message: SUCCESS_MESSAGES.LOGIN_SUCCESS,
@@ -258,12 +293,26 @@ export const getCurrentUser = asyncHandler(async (req, res) => {
  * @access Private
  */
 export const logout = asyncHandler(async (req, res) => {
-  // Clear cookies
-  // When clearing cookies, pass the same options used when setting them so browsers remove them correctly
   const isProd = process.env.NODE_ENV === 'production';
-  const clearOpts = { httpOnly: true, secure: isProd, sameSite: isProd ? 'none' : 'lax' };
+  
+  const clearOpts = { 
+    httpOnly: true, 
+    secure: isProd, 
+    sameSite: isProd ? 'none' : 'lax',
+    path: '/'
+  };
+  
+  if (isProd) {
+    clearOpts.domain = '.onrender.com';
+  }
+  
   res.clearCookie('token', clearOpts);
-  res.clearCookie('myToken', { httpOnly: false, secure: isProd, sameSite: isProd ? 'none' : 'lax' });
+  res.clearCookie('myToken', { 
+    httpOnly: false, 
+    secure: isProd, 
+    sameSite: isProd ? 'none' : 'lax',
+    path: '/'
+  });
   
   return res.status(200).json({
     success: true,
