@@ -49,7 +49,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 console.log('📁 Static files served from: /uploads');
 
 // ==========================================
-// CORS CONFIGURATION
+// CORS CONFIGURATION - FIXED for Render
 // ==========================================
 const allowedOrigins = [
   'http://localhost:5173',
@@ -60,10 +60,12 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl)
     if (!origin) {
       return callback(null, true);
     }
 
+    // Check for GitHub Codespaces
     const isGithubDev = (() => {
       try {
         const hostname = new URL(origin).hostname;
@@ -74,6 +76,7 @@ const corsOptions = {
     })();
 
     const allowed = allowedOrigins.includes(origin) || isGithubDev;
+    
     if (process.env.NODE_ENV === 'production') {
       console.log('🔐 CORS origin:', origin, 'allowed:', allowed, 'isGithubDev:', isGithubDev);
     }
@@ -86,11 +89,14 @@ const corsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Cookie']
 };
 
+// ✅ Apply CORS middleware - this handles OPTIONS preflight automatically
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
+
+// ❌ REMOVED the problematic line: app.options('*', cors(corsOptions));
+// The cors() middleware already handles OPTIONS requests automatically.
 
 // ==========================================
 // MIDDLEWARE
