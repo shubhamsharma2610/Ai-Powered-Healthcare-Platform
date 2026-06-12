@@ -4,7 +4,8 @@ import Doctor from '../models/Doctor.js';
 import User from '../models/User.js';
 import Appointment from '../models/Appointment.js';
 import Payment from '../models/Payment.js';
-
+import cloudinary from '../config/cloudinary.js';
+import fs from 'fs';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3001';
 /**
@@ -381,23 +382,38 @@ export const updateDoctorProfile = async (req, res) => {
  * @access  Private (Doctor only)
  */
 
+
+
 export const uploadDocument = async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'No file uploaded' });
     }
-    
+
     const userId = req.userId || req.user?.id || req.user?._id;
     const documentType = req.body.type;
+
+    // ✅ Upload to Cloudinary (instead of local folder)
+    const result = await cloudinary.uploader.upload(req.file.path, {
+      folder: `doctor-documents/${userId}`,
+      resource_type: 'auto'
+    });
+
+    // ✅ Delete local file after upload (cleanup)
+    try {
+      fs.unlinkSync(req.file.path);
+    } catch (err) {
+      console.log('File cleanup skipped:', err.message);
+    }
+
+    // ✅ Cloudinary URL (secure HTTPS)
+    const fileUrl = result.secure_url;
     
-    // ✅ FORCE use BASE_URL from .env
-    const fileUrl = `${BASE_URL}/uploads/documents/${req.file.filename}`;
-    
-    console.log('Saving document URL:', fileUrl); // Should show github.dev URL
+    console.log('Saving document URL to Cloudinary:', fileUrl);
     
     const updateField = `documents.${documentType}`;
     await Doctor.findByIdAndUpdate(userId, { [updateField]: fileUrl });
-    
+
     res.json({
       success: true,
       message: 'Document uploaded successfully',
