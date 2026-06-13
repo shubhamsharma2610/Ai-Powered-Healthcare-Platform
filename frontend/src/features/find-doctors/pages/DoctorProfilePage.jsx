@@ -321,7 +321,7 @@ export default function DoctorProfilePage() {
               
               <div className="flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-xl font-bold text-gray-900 font-display">Dr. {doctorFullName}</h1>
+                  <h1 className="text-xl font-bold text-gray-900 font-display">{doctorFullName}</h1>
                   {isApproved && (
                     <CheckCircle size={18} className="text-green-500" />
                   )}
