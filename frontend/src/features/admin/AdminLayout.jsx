@@ -4,7 +4,6 @@ import AdminSidebar from "./components/AdminSidebar";
 import AdminHeader from "./components/AdminHeader";
 import { useState } from "react";
 
-
 export default function AdminLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -23,7 +22,8 @@ export default function AdminLayout() {
         fixed lg:relative z-50 h-full transition-transform duration-300
         ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
-        <AdminSidebar onClose={() => setMobileMenuOpen(false)} />
+        {/* ✅ FIX: Pass mobileOpen prop */}
+        <AdminSidebar mobileOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
       </div>
       
       {/* Right Section - Add margin-left on desktop to prevent overlap */}

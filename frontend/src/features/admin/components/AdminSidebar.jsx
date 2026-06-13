@@ -101,7 +101,7 @@ export default function AdminSidebar({ mobileOpen, onClose }) {
 
       {/* Mobile Sidebar */}
       {mobileOpen && (
-        <div className="lg:hidden fixed inset-0 z-50">
+        <div className="lg:hidden min-h-screen fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/50" onClick={onClose} />
           <div className="absolute left-0 top-0 h-full animate-slide-in">
             <div className="relative">
