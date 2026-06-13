@@ -333,7 +333,7 @@ export const updateDoctorProfile = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Doctor not found' });
     }
     
-    // Update fields
+    // Update basic fields
     if (phoneNumber !== undefined) doctor.phoneNumber = phoneNumber;
     if (bio !== undefined) doctor.bio = bio;
     if (consultationFee !== undefined) doctor.consultationFee = consultationFee;
@@ -341,10 +341,17 @@ export const updateDoctorProfile = async (req, res) => {
     if (qualifications !== undefined) doctor.qualifications = qualifications;
     if (availability !== undefined) doctor.availability = availability;
     
-    // ✅ Update document fields (including UPI ID)
+    // ✅ FIX: MERGE documents - don't replace entire object
     if (documents !== undefined) {
-      doctor.documents = { ...doctor.documents, ...documents };
+      // Only update fields that are sent
+      Object.keys(documents).forEach(key => {
+        if (documents[key] !== undefined && documents[key] !== '') {
+          doctor.documents[key] = documents[key];
+        }
+      });
     }
+    
+    // Handle UPI ID
     if (upiId !== undefined) {
       doctor.documents.upiId = upiId;
     }
