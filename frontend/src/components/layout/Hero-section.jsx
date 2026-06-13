@@ -34,13 +34,14 @@ const HeroSection = () => {
   };
 
   return (
-    <section className="relative min-h-screen bg-gray-100  pb-6 md:pt-10 md:pb-24 overflow-hidden flex items-center" ref={sectionRef}>
+    <section className="relative min-h-screen bg-gray-100 pb-6 md:pt-10 md:pb-24 overflow-hidden flex items-center" ref={sectionRef}>
 
       {/* Background blobs */}
       <div className="absolute inset-0 -z-10 pointer-events-none">
         <div className="absolute top-[-8%] right-[-8%] w-[280px] h-[280px] sm:w-[420px] sm:h-[420px] md:w-[560px] md:h-[560px] rounded-full bg-[hsl(182,100%,37%)]/10 blur-[80px]" />
         <div className="absolute bottom-[5%] left-[-4%] w-[200px] h-[200px] sm:w-[280px] sm:h-[280px] rounded-full bg-[#2a6f7c]/8 blur-[60px]" />
         <div className="absolute top-[40%] left-[30%] w-[160px] h-[160px] rounded-full bg-[hsl(182,100%,37%)]/5 blur-[50px]" />
+        
         {/* Subtle grid */}
         <div
           className="absolute inset-0 opacity-[0.025]"
@@ -52,19 +53,19 @@ const HeroSection = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 xl:gap-16 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-10 xl:gap-16 items-center">
 
           {/* ── Left: Content ── */}
           <motion.div
             initial="initial"
             animate="animate"
             variants={{ animate: { transition: { staggerChildren: 0.13 } } }}
-            className="text-center lg:text-left"
+            className="text-center lg:text-left order-2 lg:order-1"
           >
             {/* Badge */}
             <motion.div
               variants={fadeInUp}
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border mb-6 text-[11px] font-bold uppercase tracking-widest"
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border mb-5 md:mb-6 text-[11px] font-bold uppercase tracking-widest"
               style={{
                 background: 'hsl(182,100%,92%)',
                 borderColor: 'hsl(182,100%,75%)',
@@ -78,14 +79,14 @@ const HeroSection = () => {
             {/* Heading */}
             <motion.h1
               variants={fadeInUp}
-              className="font-display font-extrabold text-[#1a3a4a] leading-[1.08] mb-5"
+              className="font-display font-extrabold text-[#1a3a4a] leading-[1.08] mb-4 md:mb-5"
               style={{ fontFamily: "'Outfit', sans-serif" }}
             >
-              <span className="block text-4xl sm:text-5xl lg:text-6xl xl:text-[64px]">
+              <span className="block text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-[64px]">
                 Smart Diagnosis
               </span>
               <span
-                className="block text-3xl sm:text-4xl lg:text-5xl xl:text-[52px] font-medium italic mt-1"
+                className="block text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-[52px] font-medium italic mt-1"
                 style={{ color: 'hsl(182,100%,37%)' }}
               >
                 Powered by Intelligence.
@@ -95,7 +96,7 @@ const HeroSection = () => {
             {/* Description */}
             <motion.p
               variants={fadeInUp}
-              className="text-gray-500 text-base sm:text-[17px] leading-relaxed mb-8 max-w-lg mx-auto lg:mx-0"
+              className="text-gray-500 text-sm sm:text-base md:text-[17px] leading-relaxed mb-6 md:mb-8 max-w-lg mx-auto lg:mx-0"
             >
               Upload your medical reports for an instant AI-driven analysis.
               Get clear insights, share data securely with your doctor, and
@@ -105,10 +106,10 @@ const HeroSection = () => {
             {/* Trust line */}
             <motion.div
               variants={fadeInUp}
-              className="flex items-center justify-center lg:justify-start gap-5 mb-8"
+              className="flex flex-wrap items-center justify-center lg:justify-start gap-3 sm:gap-5 mb-6 md:mb-8"
             >
               {["HIPAA Compliant", "256-bit Encrypted", "24/7 Available"].map((t, i) => (
-                <span key={i} className="flex items-center gap-1.5 text-xs text-gray-400 font-medium">
+                <span key={i} className="flex items-center gap-1.5 text-[11px] sm:text-xs text-gray-400 font-medium">
                   <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: 'hsl(182,100%,37%)' }} />
                   {t}
                 </span>
@@ -124,28 +125,28 @@ const HeroSection = () => {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => navigate('/ai-upload-report')}
-                className="flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl font-bold text-white text-sm sm:text-base transition-all duration-200"
+                className="flex items-center justify-center gap-2.5 px-5 sm:px-6 md:px-7 py-3 rounded-xl font-bold text-white text-sm sm:text-base transition-all duration-200"
                 style={{
                   background: 'hsl(182,100%,37%)',
                   boxShadow: '0 6px 28px -4px hsl(182,100%,37%,0.45)',
                 }}
               >
-                <Bot size={19} />
+                <Bot size={18} />
                 AI Assistant
-                <ArrowRight size={17} />
+                <ArrowRight size={16} />
               </motion.button>
 
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => navigate('/find-doctors')}
-                className="flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl font-bold text-sm sm:text-base border-2 bg-white transition-all duration-200 hover:bg-[hsl(182,100%,97%)]"
+                className="flex items-center justify-center gap-2.5 px-5 sm:px-6 md:px-7 py-3 rounded-xl font-bold text-sm sm:text-base border-2 bg-white transition-all duration-200 hover:bg-[hsl(182,100%,97%)]"
                 style={{
                   borderColor: 'hsl(182,100%,75%)',
                   color: '#2a6f7c',
                 }}
               >
-                <Search size={19} />
+                <Search size={18} />
                 Find Doctors
               </motion.button>
             </motion.div>
@@ -156,7 +157,7 @@ const HeroSection = () => {
             initial={{ opacity: 0, x: 36 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.75, ease: "easeOut" }}
-            className="relative flex justify-center lg:justify-end mt-8 lg:mt-0"
+            className="relative flex justify-center lg:justify-end mt-6 sm:mt-8 lg:mt-0 order-1 lg:order-2"
           >
             {/* Outer glow ring */}
             <div
@@ -166,13 +167,14 @@ const HeroSection = () => {
 
             {/* Main image */}
             <div
-              className="relative w-full max-w-[340px] sm:max-w-[400px] lg:max-w-[460px] aspect-square rounded-3xl overflow-hidden shadow-2xl"
-              style={{ border: '10px solid white' }}
+              className="relative w-full max-w-[280px] sm:max-w-[340px] md:max-w-[380px] lg:max-w-[420px] xl:max-w-[460px] aspect-square rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl"
+              style={{ border: '8px solid white' }}
             >
               <img
                 src="https://png.pngtree.com/png-vector/20250207/ourmid/pngtree-cybernetic-ai-assistant-realistic-robot-clipart-for-digital-use-png-image_15420290.png"
                 alt="AI Health Technology"
                 className="w-full h-full object-cover"
+                loading="lazy"
               />
               <div
                 className="absolute inset-0"
@@ -180,59 +182,59 @@ const HeroSection = () => {
               />
             </div>
 
-            {/* Floating card — top left: AI Status */}
+            {/* Floating card — top left: AI Status - Hide on mobile */}
             <motion.div
               animate={isVisible ? { y: [0, -10, 0] } : { y: 0 }}
               transition={{ duration: 4, repeat: isVisible ? Infinity : 0, ease: "easeInOut" }}
-              className="absolute top-6 -left-4 sm:-left-8 bg-white/95 backdrop-blur-sm p-3.5 rounded-2xl shadow-xl border border-gray-100 flex items-center gap-3 w-48 sm:w-52"
+              className="absolute top-4 sm:top-6 -left-3 sm:-left-6 md:-left-8 hidden sm:flex bg-white/95 backdrop-blur-sm p-3 rounded-xl sm:p-3.5 sm:rounded-2xl shadow-xl border border-gray-100 items-center gap-2 sm:gap-3 w-40 sm:w-48 md:w-52"
             >
               <div
-                className="p-2.5 rounded-xl text-white shrink-0 shadow-md"
+                className="p-2 sm:p-2.5 rounded-lg sm:rounded-xl text-white shrink-0 shadow-md"
                 style={{ background: 'hsl(182,100%,37%)', boxShadow: '0 4px 12px hsl(182,100%,37%,0.35)' }}
               >
-                <Cpu size={20} />
+                <Cpu size={18} className="sm:w-5 sm:h-5" />
               </div>
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-tight leading-none mb-0.5" style={{ color: 'hsl(182,100%,37%)' }}>
+                <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-tight leading-none mb-0.5" style={{ color: 'hsl(182,100%,37%)' }}>
                   System Status
                 </p>
-                <p className="text-sm font-extrabold text-[#1a3a4a]">AI Analysis Live</p>
+                <p className="text-xs sm:text-sm font-extrabold text-[#1a3a4a]">AI Analysis Live</p>
               </div>
             </motion.div>
 
-            {/* Floating card — bottom right: Secure */}
+            {/* Floating card — bottom right: Secure - Hide on mobile */}
             <motion.div
               animate={isVisible ? { y: [0, 10, 0] } : { y: 0 }}
               transition={{ duration: 5, repeat: isVisible ? Infinity : 0, ease: "easeInOut", delay: 0.5 }}
-              className="absolute bottom-6 right-2 sm:-right-4 bg-white p-3 rounded-xl shadow-lg border border-gray-100 flex items-center gap-2.5"
+              className="absolute bottom-5 sm:bottom-6 right-1 sm:right-2 md:-right-4 hidden sm:flex bg-white p-2.5 sm:p-3 rounded-lg sm:rounded-xl shadow-lg border border-gray-100 items-center gap-2 sm:gap-2.5"
             >
-              <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center text-green-500 shrink-0">
-                <ShieldCheck size={17} />
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-green-50 flex items-center justify-center text-green-500 shrink-0">
+                <ShieldCheck size={15} className="sm:w-[17px] sm:h-[17px]" />
               </div>
-              <span className="text-xs font-bold text-gray-600 whitespace-nowrap">Secure & Encrypted</span>
+              <span className="text-[10px] sm:text-xs font-bold text-gray-600 whitespace-nowrap">Secure & Encrypted</span>
             </motion.div>
 
-            {/* Floating card — mid left: Live pulse */}
+            {/* Floating card — mid left: Reports - Hide on mobile */}
             <motion.div
               animate={isVisible ? { y: [0, -7, 0] } : { y: 0 }}
               transition={{ duration: 3.5, repeat: isVisible ? Infinity : 0, ease: "easeInOut", delay: 1 }}
-              className="absolute top-[42%] -left-4 sm:-left-10 bg-white p-3 rounded-xl shadow-lg border border-gray-100 flex items-center gap-2.5"
+              className="absolute top-[42%] -left-3 sm:-left-6 md:-left-10 hidden sm:flex bg-white p-2.5 sm:p-3 rounded-lg sm:rounded-xl shadow-lg border border-gray-100 items-center gap-2 sm:gap-2.5"
             >
               <div
-                className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center shrink-0"
                 style={{ background: 'hsl(182,100%,92%)', color: 'hsl(182,100%,37%)' }}
               >
-                <Activity size={16} />
+                <Activity size={15} className="sm:w-4 sm:h-4" />
               </div>
               <div>
-                <p className="text-[10px] text-gray-400 font-medium leading-none mb-0.5">Reports Analyzed</p>
-                <p className="text-sm font-extrabold text-[#1a3a4a]">2M+ Reports</p>
+                <p className="text-[9px] sm:text-[10px] text-gray-400 font-medium leading-none mb-0.5">Reports Analyzed</p>
+                <p className="text-xs sm:text-sm font-extrabold text-[#1a3a4a]">2M+ Reports</p>
               </div>
             </motion.div>
 
-            {/* Decorative ring */}
+            {/* Decorative ring - Hide on mobile */}
             <div
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[115%] h-[115%] border border-dashed rounded-full -z-10 opacity-30"
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[115%] h-[115%] border border-dashed rounded-full -z-10 opacity-30 hidden sm:block"
               style={{ borderColor: 'hsl(182,100%,37%)' }}
             />
           </motion.div>
