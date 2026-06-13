@@ -114,7 +114,7 @@ export default function Requests() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2 flex-wrap">
                     <h3 className="text-base sm:text-lg font-semibold text-gray-800">
-                      Dr. {doctor.fullName || doctor.name || 'Doctor'}
+                    {doctor.fullName || doctor.name || 'Doctor'}
                     </h3>
                     <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-xs rounded-full inline-flex items-center gap-1">
                       <Clock size={10} /> Awaiting Verification
