@@ -1,17 +1,20 @@
-
 import * as pdfParse from 'pdf-parse';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
-// import pdfParse from 'pdf-parse';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // Ensure upload directory exists
-const uploadDir = 'uploads/reports';
+const uploadDir = path.join(__dirname, '../uploads/reports');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
+  console.log('📁 Created uploads/reports directory');
 }
 
 // Configure multer
@@ -50,6 +53,7 @@ const cleanJsonResponse = (text) => {
   let cleaned = text.trim();
   cleaned = cleaned.replace(/```json\n?/g, '');
   cleaned = cleaned.replace(/```\n?/g, '');
+  cleaned = cleaned.replace(/```/g, '');
   
   // Find JSON object in the text
   const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
@@ -57,55 +61,22 @@ const cleanJsonResponse = (text) => {
     cleaned = jsonMatch[0];
   }
   
+  // Fix trailing commas (common Gemini issue)
+  cleaned = cleaned.replace(/,\s*}/g, '}');
+  cleaned = cleaned.replace(/,\s*]/g, ']');
+  
   return cleaned;
-};
-
-// Create fallback response when parsing fails
-const getFallbackResponse = (reportText) => {
-  return {
-    summary: "Medical report analysis completed. Multiple abnormalities detected. Please consult a doctor for detailed interpretation.",
-    overallStatus: "Needs Attention",
-    overallScore: 65,
-    keyFindings: [
-      { parameter: "Thyroid Function (TSH)", value: "Elevated", unit: "", status: "warning", note: "Suggests hypothyroidism" },
-      { parameter: "Hemoglobin", value: "Low", unit: "g/dL", status: "warning", note: "Mild anemia detected" },
-      { parameter: "Vitamin B12", value: "Low", unit: "pg/mL", status: "warning", note: "Deficiency detected" },
-      { parameter: "Vitamin D", value: "Low", unit: "ng/mL", status: "warning", note: "Deficiency detected" }
-    ],
-    dietRecommendations: {
-      include: [
-        "Iron-rich foods (spinach, lentils, red meat)",
-        "Vitamin B12 sources (eggs, dairy, fish)",
-        "Vitamin D (sunlight exposure, fatty fish, fortified milk)",
-        "Iodized salt for thyroid function"
-      ],
-      avoid: [
-        "Processed foods",
-        "Excess sugar and refined carbs",
-        "Raw cruciferous vegetables in excess (may affect thyroid)"
-      ]
-    },
-    lifestyleAdvice: [
-      "Take prescribed thyroid medication daily",
-      "Take iron and vitamin supplements as advised",
-      "Get 15-20 minutes of sunlight daily",
-      "Follow up with endocrinologist within 2 weeks",
-      "Maintain a balanced diet rich in nutrients",
-      "Exercise regularly for 30 minutes daily"
-    ],
-    suggestedSpecialists: [
-      { type: "Endocrinologist", reason: "For thyroid disorder management", urgency: "soon" },
-      { type: "Dietitian/Nutritionist", reason: "For nutritional deficiency correction", urgency: "routine" },
-      { type: "General Physician", reason: "For overall health assessment", urgency: "routine" }
-    ]
-  };
 };
 
 // Analyze medical report
 export const analyzeReport = async (req, res) => {
   try {
+    // Check if file exists
     if (!req.file) {
-      return res.status(400).json({ success: false, message: 'No file uploaded' });
+      return res.status(400).json({ 
+        success: false, 
+        message: 'No file uploaded. Please select a PDF or image file.' 
+      });
     }
 
     const filePath = req.file.path;
@@ -113,11 +84,23 @@ export const analyzeReport = async (req, res) => {
     let analysis = null;
     let reportText = '';
 
+    console.log('🩺 Analyzing report...');
+
     // ==================== PDF HANDLING ====================
     if (mimetype === 'application/pdf') {
+      console.log('📄 Processing PDF file...');
       reportText = await extractTextFromPDF(filePath);
       
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+      // Check if text was extracted
+      if (!reportText || reportText.trim().length < 50) {
+        fs.unlinkSync(filePath);
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Could not extract text from PDF. Please ensure the PDF contains readable text.' 
+        });
+      }
+      
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
       
       const prompt = `
         You are a medical AI assistant. Analyze the following medical report and return ONLY valid JSON.
@@ -146,51 +129,41 @@ export const analyzeReport = async (req, res) => {
       
       const result = await model.generateContent(prompt);
       const responseText = result.response.text();
-      // console.log('PDF Analysis Response:', responseText);
+      console.log('✅ AI Response received');
       
       const cleanJson = cleanJsonResponse(responseText);
       analysis = JSON.parse(cleanJson);
+      console.log('✅ JSON parsed successfully');
     }
     
     // ==================== IMAGE HANDLING ====================
-    else {
+    else if (mimetype.startsWith('image/')) {
+      console.log('🖼️ Processing Image file...');
       const imageBuffer = fs.readFileSync(filePath);
       const base64Image = imageBuffer.toString('base64');
       
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
       
       const prompt = `You are a medical AI assistant. Analyze this medical report image carefully.
 
-Extract all medical values and conditions. Return ONLY valid JSON in this exact format. Do not add any markdown or extra text.
+Return ONLY valid JSON in this exact format. No markdown, no extra text, no explanations.
 
 {
-  "summary": "Brief 2-3 sentence summary of the patient's condition based on the report",
+  "summary": "Brief 2-3 sentence summary",
   "overallStatus": "Good or Fair or Needs Attention or Critical",
   "overallScore": 75,
   "keyFindings": [
-    {"parameter": "Test/Parameter name", "value": "numeric value or status", "unit": "unit if applicable", "status": "normal/warning/critical", "note": "brief clinical note"}
+    {"parameter": "Test name", "value": "value", "unit": "unit", "status": "normal/warning/critical", "note": "note"}
   ],
   "dietRecommendations": {
-    "include": ["list of foods to include"],
-    "avoid": ["list of foods to avoid"]
+    "include": ["food1", "food2"],
+    "avoid": ["food1", "food2"]
   },
-  "lifestyleAdvice": ["lifestyle advice 1", "lifestyle advice 2", "lifestyle advice 3"],
+  "lifestyleAdvice": ["advice1", "advice2"],
   "suggestedSpecialists": [
-    {"type": "Specialist type", "reason": "why this specialist is needed", "urgency": "routine/soon/urgent"}
+    {"type": "Specialist", "reason": "reason", "urgency": "routine/soon/urgent"}
   ]
-}
-
-Rules:
-- Use "normal" for values within normal range
-- Use "warning" for borderline or slightly abnormal values
-- Use "critical" for significantly abnormal values
-- For thyroid: High TSH + Low T3/T4 = Hypothyroidism (warning/critical)
-- For hemoglobin <12 g/dL = warning/critical
-- For vitamins below normal = warning
-- Provide realistic diet and lifestyle advice
-- Suggest appropriate specialists based on conditions found
-
-Now analyze this medical report image:`;
+}`;
       
       const imagePart = {
         inlineData: {
@@ -201,52 +174,81 @@ Now analyze this medical report image:`;
       
       const result = await model.generateContent([prompt, imagePart]);
       const responseText = result.response.text();
-      // console.log('Image Analysis Raw Response:', responseText);
+      console.log('✅ AI Response received for image');
       
-      // Clean and parse JSON
       const cleanJson = cleanJsonResponse(responseText);
-      
-      try {
-        analysis = JSON.parse(cleanJson);
-        
-        // Ensure all required fields exist
-        analysis = {
-          summary: analysis.summary || "Medical report analysis completed. Please consult a doctor for detailed interpretation.",
-          overallStatus: analysis.overallStatus || "Needs Attention",
-          overallScore: analysis.overallScore || 65,
-          keyFindings: Array.isArray(analysis.keyFindings) ? analysis.keyFindings : [],
-          dietRecommendations: analysis.dietRecommendations || { include: [], avoid: [] },
-          lifestyleAdvice: Array.isArray(analysis.lifestyleAdvice) ? analysis.lifestyleAdvice : [],
-          suggestedSpecialists: Array.isArray(analysis.suggestedSpecialists) ? analysis.suggestedSpecialists : []
-        };
-      } catch (parseError) {
-        console.error('JSON Parse Error:', parseError);
-        console.log('Failed to parse:', cleanJson);
-        analysis = getFallbackResponse();
-      }
+      analysis = JSON.parse(cleanJson);
+      console.log('✅ JSON parsed successfully');
     }
     
-    // Clean up file
+    // Unsupported file type
+    else {
+      fs.unlinkSync(filePath);
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Unsupported file type. Please upload PDF, JPG, or PNG files.' 
+      });
+    }
+    
+    // Clean up uploaded file
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
+      console.log('🗑️ Temporary file deleted');
     }
     
-    // Ensure dietRecommendations has required structure
-    if (!analysis.dietRecommendations.include) analysis.dietRecommendations.include = [];
-    if (!analysis.dietRecommendations.avoid) analysis.dietRecommendations.avoid = [];
+    // Validate analysis has required fields
+    if (!analysis || !analysis.summary) {
+      throw new Error('AI response missing required fields');
+    }
     
-    res.json({ success: true, data: analysis });
+    // Ensure all required fields exist
+    const finalAnalysis = {
+      summary: analysis.summary || "Medical report analysis completed.",
+      overallStatus: analysis.overallStatus || "Needs Attention",
+      overallScore: analysis.overallScore || 70,
+      keyFindings: Array.isArray(analysis.keyFindings) ? analysis.keyFindings : [],
+      dietRecommendations: {
+        include: analysis.dietRecommendations?.include || [],
+        avoid: analysis.dietRecommendations?.avoid || []
+      },
+      lifestyleAdvice: Array.isArray(analysis.lifestyleAdvice) ? analysis.lifestyleAdvice : [],
+      suggestedSpecialists: Array.isArray(analysis.suggestedSpecialists) ? analysis.suggestedSpecialists : []
+    };
+    
+    console.log('📊 Analysis complete');
+    res.json({ success: true, data: finalAnalysis });
     
   } catch (error) {
-    console.error('AI Analysis error:', error);
+    console.error('❌ AI Analysis error:', error.message);
     
     // Clean up file if exists
     if (req.file && fs.existsSync(req.file.path)) {
       fs.unlinkSync(req.file.path);
     }
     
-    // Return fallback response instead of error
-    const fallback = getFallbackResponse();
-    res.json({ success: true, data: fallback });
+    // Check for rate limit or quota errors
+    if (error.message?.includes('429') || error.message?.includes('quota')) {
+      return res.status(429).json({ 
+        success: false, 
+        message: 'AI service is busy. Many people are using it right now. Please try again in a few minutes.',
+        error: 'RATE_LIMIT_EXCEEDED'
+      });
+    }
+    
+    // Check for API key errors
+    if (error.message?.includes('API key') || error.message?.includes('auth')) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'AI service authentication failed. Please contact support.',
+        error: 'AUTH_ERROR'
+      });
+    }
+    
+    // Generic error
+    res.status(500).json({ 
+      success: false, 
+      message: 'Unable to analyze the report at this time. Please try again later.',
+      error: error.message
+    });
   }
 };
