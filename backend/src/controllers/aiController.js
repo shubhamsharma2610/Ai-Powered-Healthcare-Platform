@@ -17,7 +17,6 @@ if (!fs.existsSync(uploadDir)) {
   console.log('📁 Created uploads/reports directory');
 }
 
-// Configure multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir);
@@ -41,119 +40,135 @@ export const upload = multer({
   }
 });
 
-// Extract text from PDF
 const extractTextFromPDF = async (filePath) => {
   const dataBuffer = fs.readFileSync(filePath);
   const data = await pdfParse(dataBuffer);
   return data.text;
 };
 
-// Clean JSON from markdown and extra text
 const cleanJsonResponse = (text) => {
   let cleaned = text.trim();
   cleaned = cleaned.replace(/```json\n?/g, '');
   cleaned = cleaned.replace(/```\n?/g, '');
   cleaned = cleaned.replace(/```/g, '');
   
-  // Find JSON object in the text
   const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
   if (jsonMatch) {
     cleaned = jsonMatch[0];
   }
   
-  // Fix trailing commas (common Gemini issue)
   cleaned = cleaned.replace(/,\s*}/g, '}');
   cleaned = cleaned.replace(/,\s*]/g, ']');
   
   return cleaned;
 };
 
-// Analyze medical report
 export const analyzeReport = async (req, res) => {
   try {
-    // Check if file exists
     if (!req.file) {
       return res.status(400).json({ 
         success: false, 
-        message: 'No file uploaded. Please select a PDF or image file.' 
+        message: 'No file uploaded' 
       });
     }
 
     const filePath = req.file.path;
     const mimetype = req.file.mimetype;
     let analysis = null;
-    let reportText = '';
 
     console.log('🩺 Analyzing report...');
 
-    // ==================== PDF HANDLING ====================
-    if (mimetype === 'application/pdf') {
-      console.log('📄 Processing PDF file...');
-      reportText = await extractTextFromPDF(filePath);
-      
-      // Check if text was extracted
-      if (!reportText || reportText.trim().length < 50) {
-        fs.unlinkSync(filePath);
-        return res.status(400).json({ 
-          success: false, 
-          message: 'Could not extract text from PDF. Please ensure the PDF contains readable text.' 
-        });
-      }
-      
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-      
-      const prompt = `
-        You are a medical AI assistant. Analyze the following medical report and return ONLY valid JSON.
-        
-        Medical Report Text:
-        ${reportText.substring(0, 15000)}
-        
-        Return JSON in this exact format. Do not add any extra text:
-        {
-          "summary": "Brief patient summary in 2-3 sentences",
-          "overallStatus": "Good or Fair or Needs Attention or Critical",
-          "overallScore": 85,
-          "keyFindings": [
-            { "parameter": "Test name", "value": "value", "unit": "unit", "status": "normal or warning or critical", "note": "optional note" }
-          ],
-          "dietRecommendations": {
-            "include": ["food1", "food2"],
-            "avoid": ["food1", "food2"]
-          },
-          "lifestyleAdvice": ["advice1", "advice2"],
-          "suggestedSpecialists": [
-            { "type": "Cardiologist", "reason": "reason", "urgency": "routine or soon or urgent" }
-          ]
+    // Select model (allow override via env). Primary: gemini-2.5-flash, fallback: gemini-1.5-flash
+    const defaultModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+    console.log(`🧠 Selected model: ${defaultModel}`);
+
+    // Helper: try generation with retries for transient errors and fallback to older model if unavailable
+    const generateWithRetry = async (input) => {
+      const modelsToTry = [defaultModel, 'gemini-1.5-flash'];
+      let lastError = null;
+
+      for (const modelName of modelsToTry) {
+        const localModel = genAI.getGenerativeModel({ model: modelName });
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          try {
+            console.log(`🔁 Generating with ${modelName} (attempt ${attempt})`);
+            const out = await localModel.generateContent(input);
+            return { out, modelName };
+          } catch (err) {
+            lastError = err;
+            const msg = (err.message || '').toLowerCase();
+            // Retry on rate limit / quota
+            if (msg.includes('429') || msg.includes('quota') || msg.includes('rate limit')) {
+              const delay = 500 * Math.pow(2, attempt);
+              console.warn(`Rate limited by AI service, retrying after ${delay}ms...`);
+              await new Promise((r) => setTimeout(r, delay));
+              continue;
+            }
+            // If model not found / not available, break to try next model
+            if (msg.includes('model') && (msg.includes('not') || msg.includes('unavailable') || msg.includes('not found'))) {
+              console.warn(`Model ${modelName} not available, trying next fallback model`);
+              break;
+            }
+            // For other errors, do not retry this model
+            break;
+          }
         }
-      `;
+      }
+      throw lastError;
+    };
+
+    if (mimetype === 'application/pdf') {
+      console.log('📄 Processing PDF...');
+      const reportText = await extractTextFromPDF(filePath);
       
-      const result = await model.generateContent(prompt);
+      const prompt = `Analyze this medical report and return ONLY valid JSON. No markdown.
+
+Report: ${reportText.substring(0, 10000)}
+
+Return JSON format:
+{
+  "summary": "brief summary",
+  "overallStatus": "Good or Fair or Needs Attention or Critical",
+  "overallScore": 85,
+  "keyFindings": [
+    {"parameter": "test name", "value": "value", "unit": "unit", "status": "normal/warning/critical", "note": "note"}
+  ],
+  "dietRecommendations": {
+    "include": ["food1", "food2"],
+    "avoid": ["food1", "food2"]
+  },
+  "lifestyleAdvice": ["advice1", "advice2"],
+  "suggestedSpecialists": [
+    {"type": "Specialist", "reason": "reason", "urgency": "routine/soon/urgent"}
+  ]
+}`;
+
+      const { out: result, modelName: usedModel } = await generateWithRetry(prompt);
       const responseText = result.response.text();
-      console.log('✅ AI Response received');
-      
       const cleanJson = cleanJsonResponse(responseText);
       analysis = JSON.parse(cleanJson);
-      console.log('✅ JSON parsed successfully');
-    }
-    
-    // ==================== IMAGE HANDLING ====================
-    else if (mimetype.startsWith('image/')) {
-      console.log('🖼️ Processing Image file...');
+      
+    } else if (mimetype.startsWith('image/')) {
+      console.log('🖼️ Processing Image...');
       const imageBuffer = fs.readFileSync(filePath);
       const base64Image = imageBuffer.toString('base64');
       
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const imagePart = {
+        inlineData: {
+          data: base64Image,
+          mimeType: mimetype
+        }
+      };
       
-      const prompt = `You are a medical AI assistant. Analyze this medical report image carefully.
+      const prompt = `Analyze this medical report image and return ONLY valid JSON. No markdown.
 
-Return ONLY valid JSON in this exact format. No markdown, no extra text, no explanations.
-
+Return JSON format:
 {
-  "summary": "Brief 2-3 sentence summary",
+  "summary": "brief summary",
   "overallStatus": "Good or Fair or Needs Attention or Critical",
-  "overallScore": 75,
+  "overallScore": 85,
   "keyFindings": [
-    {"parameter": "Test name", "value": "value", "unit": "unit", "status": "normal/warning/critical", "note": "note"}
+    {"parameter": "test name", "value": "value", "unit": "unit", "status": "normal/warning/critical", "note": "note"}
   ],
   "dietRecommendations": {
     "include": ["food1", "food2"],
@@ -165,68 +180,34 @@ Return ONLY valid JSON in this exact format. No markdown, no extra text, no expl
   ]
 }`;
       
-      const imagePart = {
-        inlineData: {
-          data: base64Image,
-          mimeType: mimetype
-        }
-      };
-      
-      const result = await model.generateContent([prompt, imagePart]);
+      const { out: result, modelName: usedModel } = await generateWithRetry([prompt, imagePart]);
       const responseText = result.response.text();
-      console.log('✅ AI Response received for image');
-      
       const cleanJson = cleanJsonResponse(responseText);
       analysis = JSON.parse(cleanJson);
-      console.log('✅ JSON parsed successfully');
-    }
-    
-    // Unsupported file type
-    else {
+    } else {
       fs.unlinkSync(filePath);
       return res.status(400).json({ 
         success: false, 
-        message: 'Unsupported file type. Please upload PDF, JPG, or PNG files.' 
+        message: 'Unsupported file type. Please upload PDF, JPG, or PNG.' 
       });
     }
     
-    // Clean up uploaded file
+    // Clean up file
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
-      console.log('🗑️ Temporary file deleted');
     }
     
-    // Validate analysis has required fields
-    if (!analysis || !analysis.summary) {
-      throw new Error('AI response missing required fields');
-    }
-    
-    // Ensure all required fields exist
-    const finalAnalysis = {
-      summary: analysis.summary || "Medical report analysis completed.",
-      overallStatus: analysis.overallStatus || "Needs Attention",
-      overallScore: analysis.overallScore || 70,
-      keyFindings: Array.isArray(analysis.keyFindings) ? analysis.keyFindings : [],
-      dietRecommendations: {
-        include: analysis.dietRecommendations?.include || [],
-        avoid: analysis.dietRecommendations?.avoid || []
-      },
-      lifestyleAdvice: Array.isArray(analysis.lifestyleAdvice) ? analysis.lifestyleAdvice : [],
-      suggestedSpecialists: Array.isArray(analysis.suggestedSpecialists) ? analysis.suggestedSpecialists : []
-    };
-    
-    console.log('📊 Analysis complete');
-    res.json({ success: true, data: finalAnalysis });
+    console.log('✅ Analysis complete');
+    res.json({ success: true, data: analysis });
     
   } catch (error) {
-    console.error('❌ AI Analysis error:', error.message);
+    console.error('❌ AI Error:', error.message);
     
-    // Clean up file if exists
     if (req.file && fs.existsSync(req.file.path)) {
       fs.unlinkSync(req.file.path);
     }
     
-    // Check for rate limit or quota errors
+    // Check for rate limit
     if (error.message?.includes('429') || error.message?.includes('quota')) {
       return res.status(429).json({ 
         success: false, 
@@ -235,16 +216,6 @@ Return ONLY valid JSON in this exact format. No markdown, no extra text, no expl
       });
     }
     
-    // Check for API key errors
-    if (error.message?.includes('API key') || error.message?.includes('auth')) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'AI service authentication failed. Please contact support.',
-        error: 'AUTH_ERROR'
-      });
-    }
-    
-    // Generic error
     res.status(500).json({ 
       success: false, 
       message: 'Unable to analyze the report at this time. Please try again later.',
