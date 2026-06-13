@@ -341,9 +341,9 @@ export const updateDoctorProfile = async (req, res) => {
     if (qualifications !== undefined) doctor.qualifications = qualifications;
     if (availability !== undefined) doctor.availability = availability;
     
-    // ✅ FIX: MERGE documents - don't replace entire object
+    // ✅ FIX: Merge documents - preserve existing values
     if (documents !== undefined) {
-      // Only update fields that are sent
+      // Only update fields that are sent and not empty
       Object.keys(documents).forEach(key => {
         if (documents[key] !== undefined && documents[key] !== '') {
           doctor.documents[key] = documents[key];
@@ -356,16 +356,17 @@ export const updateDoctorProfile = async (req, res) => {
       doctor.documents.upiId = upiId;
     }
     
-    // Reset rejection status if profile was rejected
-    if (doctor.isRejected) {
+    // ✅ DON'T reset rejection status if profile is submitted
+    // Only reset if explicitly rejected
+    if (doctor.isRejected && !doctor.submittedForApproval) {
       doctor.isRejected = false;
       doctor.rejectionReason = '';
-      doctor.submittedForApproval = false;
       doctor.status = 'pending';
     }
     
     await doctor.save();
     
+    // ✅ Return updated doctor with all documents
     res.json({ 
       success: true, 
       data: doctor,
@@ -376,7 +377,6 @@ export const updateDoctorProfile = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
 /**
  * @desc    Upload document
  * @route   POST /api/doctors/upload-document
