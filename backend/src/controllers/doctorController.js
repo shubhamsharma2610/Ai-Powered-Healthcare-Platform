@@ -7,7 +7,8 @@ import Payment from '../models/Payment.js';
 import cloudinary from '../config/cloudinary.js';
 import fs from 'fs';
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3001';
+// const BASE_URL = process.env.BASE_URL || 'http://localhost:3001';
+const BASE_URL = process.env.BASE_URL || 'https://ai-powered-healthcare-platform.onrender.com';
 /**
  * @desc    Get all approved doctors with filtering and pagination
  * @route   GET /api/doctors
@@ -295,15 +296,8 @@ export const getDoctorProfile = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Doctor not found' });
     }
     
-    // ✅ Fix document URLs if they have localhost
+    // Convert to object and send response
     const doctorObj = doctor.toObject();
-    if (doctorObj.documents) {
-      Object.keys(doctorObj.documents).forEach(key => {
-        if (doctorObj.documents[key] && doctorObj.documents[key].includes('localhost:3001')) {
-          doctorObj.documents[key] = doctorObj.documents[key].replace('http://localhost:3001', BASE_URL);
-        }
-      });
-    }
     
     res.json({ 
       success: true, 
